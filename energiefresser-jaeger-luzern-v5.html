@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Energiefresser-Jäger · Circular Quest Luzern</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{
+  --quest:#E8962E; --quest-dark:#9C5D0E; --quest-pale:#FBEED8;
+  --ink:#1C1B17; --paper:#FAF7F0; --teal:#1D9E75; --teal-dark:#0F6E56;
+  --red:#D85A30; --muted:#6E6A60; --line:#E4DFD4;
+  --pix:'Press Start 2P',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans-serif;background:var(--paper);color:var(--ink);}
+#map{position:absolute;inset:0;z-index:1;}
+
+/* ---------- HUD ---------- */
+#topbar{position:absolute;top:0;left:0;right:0;z-index:1000;padding:12px 14px 0;pointer-events:none;}
+.hud{display:flex;gap:8px;pointer-events:auto;}
+.hud-card{flex:1;background:var(--ink);color:var(--paper);border-radius:14px;padding:10px 12px;}
+.hud-card small{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#B8B3A6;display:block;margin-bottom:2px;}
+.hud-card strong{font-size:18px;font-weight:700;line-height:1.1;}
+.hud-card strong span{font-size:12px;font-weight:500;color:#B8B3A6;}
+#brand{position:absolute;top:76px;left:14px;z-index:1000;background:var(--quest);color:var(--ink);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:6px 10px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+#gps-pill{position:absolute;top:76px;right:14px;z-index:1000;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,.1);}
+#gps-dot{width:8px;height:8px;border-radius:50%;background:var(--red);}
+#gps-dot.on{background:var(--teal);animation:blink 2s infinite;}
+@keyframes blink{50%{opacity:.4}}
+#mute{position:absolute;top:118px;right:14px;z-index:1000;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,.1);}
+#dexbtn{position:absolute;top:160px;right:14px;z-index:1000;background:var(--ink);color:#fff;border:none;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+
+/* ---------- Karten-Pins ---------- */
+.spot-pin{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;font-size:19px;border:3px solid var(--ink);background:#fff;box-shadow:0 3px 10px rgba(0,0,0,.25);}
+.spot-pin.good{border-style:double;border-width:4px;border-color:var(--teal-dark);}
+.spot-pin.near{background:var(--quest);animation:pulseRing 1.6s infinite;cursor:pointer;}
+.spot-pin.good.near{background:#C9F0DF;animation:pulseRingGood 1.6s infinite;}
+.spot-pin.done{background:var(--teal);border-color:var(--teal-dark);}
+.spot-pin.far{opacity:.75;filter:grayscale(.4);}
+@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(232,150,46,.55)}70%{box-shadow:0 0 0 16px rgba(232,150,46,0)}100%{box-shadow:0 0 0 0 rgba(232,150,46,0)}}
+@keyframes pulseRingGood{0%{box-shadow:0 0 0 0 rgba(29,158,117,.5)}70%{box-shadow:0 0 0 16px rgba(29,158,117,0)}100%{box-shadow:0 0 0 0 rgba(29,158,117,0)}}
+.dist-label{background:var(--ink);color:#fff;font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:500;padding:2px 8px;border-radius:999px;white-space:nowrap;border:none;box-shadow:0 2px 6px rgba(0,0,0,.2);}
+.clue-pin{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#fff;border:2.5px dashed var(--quest-dark);font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.2);animation:clueBob 2s ease-in-out infinite;}
+.clue-pin.got{border:2.5px solid var(--teal-dark);background:#DFF3EA;animation:none;opacity:.7;}
+@keyframes clueBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+
+/* ---------- Spielfigur ---------- */
+.hero-pin{position:relative;width:52px;height:64px;}
+.hero-pin .hero-ring{position:absolute;left:50%;bottom:2px;width:34px;height:12px;margin-left:-17px;border-radius:50%;border:2px solid rgba(232,150,46,.9);animation:heroRing 1.8s ease-out infinite;}
+@keyframes heroRing{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.6);opacity:0}}
+.hero-pin svg{position:absolute;left:0;top:0;animation:heroBob 1.3s ease-in-out infinite;filter:drop-shadow(0 3px 3px rgba(0,0,0,.3));}
+@keyframes heroBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+/* ---------- Karten-Stil (Game-Look) ---------- */
+.leaflet-tile-pane{filter:saturate(1.45) hue-rotate(-6deg) sepia(.14) brightness(1.03) contrast(1.05);}
+#map-tint{position:absolute;inset:0;z-index:450;pointer-events:none;background:radial-gradient(130% 130% at 50% 25%, rgba(232,150,46,0) 55%, rgba(156,93,14,.18) 100%);mix-blend-mode:multiply;}
+
+/* ---------- Toast ---------- */
+#toast{position:absolute;top:170px;left:50%;transform:translate(-50%,-16px);z-index:1500;background:var(--ink);color:#fff;border-radius:14px;padding:12px 16px;max-width:88%;box-shadow:0 6px 20px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;}
+#toast.show{opacity:1;transform:translate(-50%,0);}
+#toast .t-head{font-family:var(--pix);font-size:9px;color:var(--quest);margin-bottom:6px;}
+#toast .t-body{font-size:14px;line-height:1.45;}
+
+/* ---------- Sheet ---------- */
+#sheet{position:absolute;left:0;right:0;bottom:0;z-index:1100;background:#fff;border-radius:22px 22px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,.2);transform:translateY(105%);transition:transform .3s cubic-bezier(.3,1,.4,1);}
+#sheet.open{transform:translateY(0);}
+.sheet-title{font-size:20px;font-weight:700;margin-bottom:8px;}
+.sheet-desc{font-size:15px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+.btn{display:inline-block;width:100%;text-align:center;font-family:inherit;font-size:15px;font-weight:700;padding:14px;border-radius:12px;border:none;cursor:pointer;}
+.btn-dark{background:var(--ink);color:#fff;}
+.btn-quest{background:var(--quest);color:var(--ink);}
+
+/* ---------- Test-Modus ---------- */
+#testbar{position:absolute;bottom:14px;left:14px;right:14px;z-index:1000;display:flex;flex-direction:column;gap:8px;align-items:center;}
+#test-toggle{font-family:inherit;font-size:13px;font-weight:500;background:#fff;border:1px solid var(--line);border-radius:999px;padding:9px 16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);}
+#test-stops{display:none;gap:6px;flex-wrap:wrap;justify-content:center;}
+#test-stops.show{display:flex;}
+.tp{font-family:inherit;font-size:12px;font-weight:500;background:var(--ink);color:#fff;border:none;border-radius:999px;padding:8px 12px;cursor:pointer;}
+.tp.tgood{background:var(--teal-dark);}
+
+/* ---------- Monsterdex ---------- */
+#dex{position:absolute;inset:0;z-index:2500;background:var(--paper);display:none;flex-direction:column;overflow:hidden;}
+#dex.show{display:flex;}
+#dex-head{background:var(--ink);color:#fff;padding:16px 18px 14px;display:flex;align-items:center;justify-content:space-between;}
+#dex-head h2{font-family:var(--pix);font-size:12px;color:var(--quest);}
+#dex-close{background:var(--quest);color:var(--ink);border:none;border-radius:999px;padding:8px 14px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;}
+#dex-body{flex:1;overflow-y:auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom));}
+.dex-section{font-family:var(--pix);font-size:9px;color:var(--quest-dark);margin:14px 4px 10px;letter-spacing:.05em;}
+.dex-section.good{color:var(--teal-dark);}
+.dex-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.dex-card{background:#fff;border:3px solid var(--ink);border-radius:14px;padding:12px;box-shadow:3px 3px 0 rgba(0,0,0,.15);}
+.dex-card.goodcard{border-color:var(--teal-dark);}
+.dex-card.locked{opacity:.85;}
+.dex-card svg{width:100%;height:auto;max-height:96px;}
+.dex-card.locked svg{filter:brightness(0) opacity(.25);}
+.dex-num{font-family:var(--pix);font-size:8px;color:var(--muted);}
+.dex-name{font-weight:700;font-size:14px;margin:4px 0 2px;}
+.dex-fact{font-size:12px;color:var(--muted);line-height:1.45;margin-top:4px;}
+.clue-list{display:flex;flex-direction:column;gap:8px;}
+.clue-item{background:#fff;border:2px solid var(--line);border-radius:12px;padding:11px 14px;font-size:13px;line-height:1.45;display:flex;gap:10px;align-items:flex-start;}
+.clue-item.locked{color:var(--muted);border-style:dashed;}
+.clue-item .ci-ico{font-size:16px;line-height:1.2;}
+
+/* ================= KAMPF / BEGEGNUNG ================= */
+#battle{position:absolute;inset:0;z-index:3000;display:none;flex-direction:column;background:linear-gradient(180deg,#DCEFE2 0%,#F2EFD9 60%,#E8E2C8 100%);overflow:hidden;}
+#battle.show{display:flex;}
+#battle.entering::before{content:'';position:absolute;inset:0;z-index:50;background:repeating-linear-gradient(0deg,var(--ink) 0 24px,transparent 24px 48px);animation:swirl .7s steps(6) forwards;}
+@keyframes swirl{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.4)}}
+#arena{flex:1;position:relative;min-height:0;}
+.platform{position:absolute;border-radius:50%;background:rgba(0,0,0,.10);}
+#plat-enemy{width:44%;height:9%;right:4%;top:33%;}
+#plat-me{width:52%;height:10%;left:2%;bottom:4%;}
+#enemy-wrap{position:absolute;right:6%;top:6%;width:38%;max-width:210px;animation:idleBob 2.2s ease-in-out infinite;}
+#me-wrap{position:absolute;left:6%;bottom:7%;width:34%;max-width:190px;}
+#enemy-wrap svg,#me-wrap svg{width:100%;height:auto;display:block;}
+@keyframes idleBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.hitflash{animation:hitflash .5s steps(4) !important;}
+@keyframes hitflash{0%,50%{opacity:0}25%,75%{opacity:1}}
+.lunge{animation:lunge .4s ease-out !important;}
+@keyframes lunge{0%{transform:translate(0,0)}40%{transform:translate(36px,-20px)}100%{transform:translate(0,0)}}
+.joy{animation:joy .55s ease-out !important;}
+@keyframes joy{0%{transform:scale(1) translateY(0)}40%{transform:scale(1.12) translateY(-14px)}70%{transform:scale(.98) translateY(0)}100%{transform:scale(1) translateY(0)}}
+.sad{animation:sad .5s ease-in-out !important;}
+@keyframes sad{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px) rotate(-3deg)}75%{transform:translateX(8px) rotate(3deg)}}
+.shakeAll{animation:shakeAll .45s;}
+@keyframes shakeAll{0%,100%{transform:translate(0,0)}20%{transform:translate(-9px,3px)}40%{transform:translate(8px,-3px)}60%{transform:translate(-6px,2px)}80%{transform:translate(5px,-2px)}}
+.faint{animation:faint .8s ease-in forwards !important;}
+@keyframes faint{100%{transform:translateY(70px);opacity:0}}
+.infobox{position:absolute;background:#FCFAF2;border:3px solid var(--ink);border-radius:10px;padding:9px 12px;box-shadow:4px 4px 0 rgba(0,0,0,.25);min-width:46%;}
+#enemy-box{left:4%;top:5%;}
+#me-box{right:4%;bottom:6%;}
+.mon-name{font-family:var(--pix);font-size:10px;margin-bottom:7px;}
+.hp-row{display:flex;align-items:center;gap:6px;}
+.hp-tag{font-family:var(--pix);font-size:7px;color:var(--quest-dark);}
+.hp-track{flex:1;height:10px;background:#D8D3C4;border:2px solid var(--ink);border-radius:6px;overflow:hidden;}
+.hp-fill{height:100%;width:100%;background:var(--teal);transition:width .6s cubic-bezier(.2,.8,.3,1),background .3s;}
+.hearts{font-size:15px;letter-spacing:2px;margin-top:2px;}
+#battle-bottom{background:#FCFAF2;border-top:4px solid var(--ink);padding:12px 14px calc(12px + env(safe-area-inset-bottom));min-height:190px;display:flex;flex-direction:column;}
+#btext{font-family:var(--pix);font-size:11px;line-height:1.9;min-height:44px;margin-bottom:10px;}
+#bopts{display:grid;grid-template-columns:1fr;gap:8px;}
+.bopt{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;text-align:left;padding:12px 14px;border:3px solid var(--ink);border-radius:10px;background:#fff;cursor:pointer;box-shadow:3px 3px 0 rgba(0,0,0,.2);}
+.bopt:active{transform:translate(2px,2px);box-shadow:1px 1px 0 rgba(0,0,0,.2);}
+.bopt.right{background:#C9F0DF;border-color:var(--teal-dark);}
+.bopt.wrong{background:#FBD9CB;border-color:var(--red);}
+.bnext{margin-top:auto;}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important;}}
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div id="topbar">
+  <div class="hud">
+    <div class="hud-card"><small>Verbrauch</small><strong id="kw">19.4 <span>kW</span></strong></div>
+    <div class="hud-card"><small>Fresser</small><strong id="score">0 <span>/ 4</span></strong></div>
+    <div class="hud-card"><small>Helfer</small><strong id="team">0 <span>/ 4</span></strong></div>
+  </div>
+</div>
+<div id="brand">Circular Quest · Energiefresser-Jäger</div>
+<div id="gps-pill"><span id="gps-dot"></span><span id="gps-txt">GPS aus</span></div>
+<button id="mute">🔇 Musik aus</button>
+<button id="dexbtn">📕 Dex · 🔍 0/6</button>
+
+<div id="toast"><div class="t-head" id="toast-head">INDIZ GEFUNDEN!</div><div class="t-body" id="toast-body"></div></div>
+
+<div id="testbar">
+  <div id="test-stops"></div>
+  <button id="test-toggle">Test-Modus: Route simulieren</button>
+</div>
+
+<div id="sheet"><div id="sheet-content"></div></div>
+
+<!-- ============ MONSTERDEX ============ -->
+<div id="dex">
+  <div id="dex-head"><h2>MONSTERDEX</h2><button id="dex-close">Schliessen</button></div>
+  <div id="dex-body">
+    <div class="dex-section">ENERGIEFRESSER · BESIEGEN</div>
+    <div class="dex-grid" id="dex-bad"></div>
+    <div class="dex-section good">ENERGIEHELFER · ANFREUNDEN</div>
+    <div class="dex-grid" id="dex-good"></div>
+    <div class="dex-section">GESAMMELTE INDIZIEN</div>
+    <div class="clue-list" id="dex-clues"></div>
+  </div>
+</div>
+
+<!-- ============ KAMPF / BEGEGNUNG ============ -->
+<div id="battle">
+  <div id="arena">
+    <div class="platform" id="plat-enemy"></div>
+    <div class="platform" id="plat-me"></div>
+    <div id="enemy-wrap"></div>
+    <div id="me-wrap">
+      <svg viewBox="0 0 120 120" aria-label="Energie-Detektiv">
+        <ellipse cx="60" cy="112" rx="34" ry="6" fill="rgba(0,0,0,.12)"/>
+        <path d="M38 60 Q38 34 60 34 Q82 34 82 60 L82 100 Q82 110 60 110 Q38 110 38 100 Z" fill="#2F4A5C"/>
+        <circle cx="60" cy="36" r="17" fill="#3B5A70"/>
+        <rect x="46" y="20" width="28" height="9" rx="4" fill="#E8962E"/>
+        <rect x="52" y="12" width="16" height="10" rx="4" fill="#E8962E"/>
+        <rect x="84" y="52" width="26" height="9" rx="4" fill="#1C1B17"/>
+        <polygon points="110,50 126,44 126,70 110,63" fill="#FFE79A" opacity=".85"/>
+        <circle cx="108" cy="56" r="6" fill="#FFD34D"/>
+      </svg>
+    </div>
+    <div class="infobox" id="enemy-box">
+      <div class="mon-name" id="enemy-name">???</div>
+      <div class="hp-row"><span class="hp-tag" id="hp-tag">KW</span><div class="hp-track"><div class="hp-fill" id="enemy-hp"></div></div></div>
+    </div>
+    <div class="infobox" id="me-box">
+      <div class="mon-name">DETEKTIV:IN</div>
+      <div class="hearts" id="hearts">❤️❤️❤️</div>
+    </div>
+  </div>
+  <div id="battle-bottom">
+    <div id="btext"></div>
+    <div id="bopts"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ================= KONFIG ================= */
+const UNLOCK_RADIUS = 50;
+const CLUE_RADIUS   = 35;
+
+/* ================= SPRITES ================= */
+const MON = {
+ frost: `<svg viewBox="0 0 200 180"><ellipse cx="100" cy="168" rx="52" ry="8" fill="rgba(0,0,0,.12)"/><path d="M55 40 Q55 14 100 14 Q145 14 145 40 L145 120 Q145 150 128 142 Q118 160 100 148 Q82 160 72 142 Q55 150 55 120 Z" fill="#DCF1FA" stroke="#1C1B17" stroke-width="5"/><line x1="55" y1="78" x2="145" y2="78" stroke="#1C1B17" stroke-width="5"/><rect x="126" y="52" width="8" height="18" rx="4" fill="#1C1B17"/><rect x="126" y="88" width="8" height="18" rx="4" fill="#1C1B17"/><circle cx="84" cy="58" r="5" fill="#1C1B17"/><circle cx="112" cy="58" r="5" fill="#1C1B17"/><path d="M86 98 Q100 108 114 98" stroke="#1C1B17" stroke-width="5" fill="none"/><path d="M60 30 L48 18 M140 30 L152 18" stroke="#8FD4EE" stroke-width="6" stroke-linecap="round"/></svg>`,
+ glut: `<svg viewBox="0 0 200 180"><ellipse cx="100" cy="168" rx="55" ry="8" fill="rgba(0,0,0,.12)"/><path d="M100 12 Q116 40 134 48 Q166 64 162 104 Q158 150 100 156 Q42 150 38 104 Q34 64 66 48 Q84 40 100 12 Z" fill="#F0803C" stroke="#1C1B17" stroke-width="5"/><path d="M100 40 Q110 58 122 64 Q142 76 138 104 Q134 134 100 138 Q66 134 62 104 Q58 76 78 64 Q90 58 100 40 Z" fill="#FFC24D"/><circle cx="84" cy="98" r="6" fill="#1C1B17"/><circle cx="116" cy="98" r="6" fill="#1C1B17"/><path d="M78 88 L92 92 M122 88 L108 92" stroke="#1C1B17" stroke-width="5" stroke-linecap="round"/><path d="M86 120 Q100 112 114 120" stroke="#1C1B17" stroke-width="5" fill="none"/></svg>`,
+ falter: `<svg viewBox="0 0 200 180"><ellipse cx="100" cy="168" rx="50" ry="8" fill="rgba(0,0,0,.12)"/><path d="M64 84 Q18 54 22 96 Q26 130 64 112 Z" fill="#FFE79A" stroke="#1C1B17" stroke-width="5"/><path d="M136 84 Q182 54 178 96 Q174 130 136 112 Z" fill="#FFE79A" stroke="#1C1B17" stroke-width="5"/><path d="M76 60 Q76 36 100 36 Q124 36 124 60 L124 108 Q124 140 100 140 Q76 140 76 108 Z" fill="#FFD34D" stroke="#1C1B17" stroke-width="5"/><path d="M84 120 L116 120 M82 106 L118 106" stroke="#B98A12" stroke-width="4"/><circle cx="90" cy="66" r="5" fill="#1C1B17"/><circle cx="110" cy="66" r="5" fill="#1C1B17"/><path d="M92 84 Q100 90 108 84" stroke="#1C1B17" stroke-width="5" fill="none"/><line x1="92" y1="36" x2="84" y2="20" stroke="#1C1B17" stroke-width="4"/><line x1="108" y1="36" x2="116" y2="20" stroke="#1C1B17" stroke-width="4"/><circle cx="84" cy="18" r="4" fill="#1C1B17"/><circle cx="116" cy="18" r="4" fill="#1C1B17"/></svg>`,
+ wyrm: `<svg viewBox="0 0 200 180"><ellipse cx="100" cy="168" rx="55" ry="8" fill="rgba(0,0,0,.12)"/><circle cx="100" cy="90" r="62" fill="#9FE1CB" stroke="#1C1B17" stroke-width="5"/><path d="M100 90 Q100 44 138 52 Q112 62 108 90 Z" fill="#1D9E75"/><path d="M100 90 Q146 90 138 128 Q128 102 100 98 Z" fill="#1D9E75"/><path d="M100 90 Q100 136 62 128 Q88 118 92 90 Z" fill="#1D9E75"/><path d="M100 90 Q54 90 62 52 Q72 78 100 82 Z" fill="#1D9E75"/><circle cx="100" cy="90" r="15" fill="#FCFAF2" stroke="#1C1B17" stroke-width="5"/><circle cx="96" cy="88" r="4" fill="#1C1B17"/><circle cx="106" cy="88" r="4" fill="#1C1B17"/><path d="M95 97 Q100 101 105 97" stroke="#1C1B17" stroke-width="3.5" fill="none"/></svg>`,
+ schaum: `<svg viewBox="0 0 200 180"><ellipse cx="100" cy="168" rx="55" ry="8" fill="rgba(0,0,0,.12)"/><path d="M40 120 Q34 66 100 62 Q166 66 160 120 Q156 152 100 154 Q44 152 40 120 Z" fill="#BFE3F5" stroke="#1C1B17" stroke-width="5"/><circle cx="74" cy="56" r="14" fill="#E4F4FC" stroke="#1C1B17" stroke-width="4"/><circle cx="106" cy="44" r="10" fill="#E4F4FC" stroke="#1C1B17" stroke-width="4"/><circle cx="132" cy="58" r="8" fill="#E4F4FC" stroke="#1C1B17" stroke-width="4"/><circle cx="84" cy="104" r="6" fill="#1C1B17"/><circle cx="116" cy="104" r="6" fill="#1C1B17"/><path d="M82 122 Q100 136 118 122" stroke="#1C1B17" stroke-width="5" fill="none"/><circle cx="70" cy="118" r="7" fill="#F3A7B8" opacity=".7"/><circle cx="130" cy="118" r="7" fill="#F3A7B8" opacity=".7"/></svg>`,
+ sonne: `<svg viewBox="0 0 200 180"><ellipse cx="100" cy="168" rx="48" ry="8" fill="rgba(0,0,0,.12)"/><g stroke="#E8962E" stroke-width="6" stroke-linecap="round"><line x1="100" y1="8" x2="100" y2="24"/><line x1="152" y1="30" x2="141" y2="41"/><line x1="48" y1="30" x2="59" y2="41"/><line x1="170" y1="78" x2="154" y2="78"/><line x1="30" y1="78" x2="46" y2="78"/></g><circle cx="100" cy="78" r="42" fill="#FFD34D" stroke="#1C1B17" stroke-width="5"/><circle cx="86" cy="72" r="5" fill="#1C1B17"/><circle cx="114" cy="72" r="5" fill="#1C1B17"/><path d="M84 90 Q100 102 116 90" stroke="#1C1B17" stroke-width="5" fill="none"/><circle cx="74" cy="84" r="6" fill="#F3A7B8" opacity=".7"/><circle cx="126" cy="84" r="6" fill="#F3A7B8" opacity=".7"/><g transform="translate(58,128) rotate(-6)"><rect width="84" height="34" rx="4" fill="#2F4A5C" stroke="#1C1B17" stroke-width="4"/><line x1="28" y1="0" x2="28" y2="34" stroke="#8FB6D9" stroke-width="3"/><line x1="56" y1="0" x2="56" y2="34" stroke="#8FB6D9" stroke-width="3"/><line x1="0" y1="17" x2="84" y2="17" stroke="#8FB6D9" stroke-width="3"/></g></svg>`,
+ welle: `<svg viewBox="0 0 200 180"><ellipse cx="100" cy="168" rx="50" ry="8" fill="rgba(0,0,0,.12)"/><path d="M100 14 Q146 76 146 110 Q146 152 100 156 Q54 152 54 110 Q54 76 100 14 Z" fill="#7FC8EC" stroke="#1C1B17" stroke-width="5"/><path d="M66 112 Q78 104 90 112 Q102 120 114 112 Q126 104 136 112" stroke="#FCFAF2" stroke-width="5" fill="none" opacity=".85"/><circle cx="86" cy="86" r="5" fill="#1C1B17"/><circle cx="114" cy="86" r="5" fill="#1C1B17"/><path d="M88 128 Q100 138 112 128" stroke="#1C1B17" stroke-width="5" fill="none"/><circle cx="80" cy="58" r="8" fill="#FCFAF2" opacity=".5"/></svg>`,
+ restli: `<svg viewBox="0 0 200 180"><ellipse cx="100" cy="168" rx="52" ry="8" fill="rgba(0,0,0,.12)"/><path d="M52 66 L148 66 L138 40 L62 40 Z" fill="#E8CBA0" stroke="#1C1B17" stroke-width="5"/><rect x="52" y="66" width="96" height="80" rx="10" fill="#D9B98A" stroke="#1C1B17" stroke-width="5"/><line x1="52" y1="88" x2="148" y2="88" stroke="#B98A50" stroke-width="4"/><circle cx="84" cy="112" r="6" fill="#1C1B17"/><circle cx="116" cy="112" r="6" fill="#1C1B17"/><path d="M84 130 Q100 142 116 130" stroke="#1C1B17" stroke-width="5" fill="none"/><path d="M100 40 Q96 18 116 12 Q118 32 104 40 Z" fill="#1D9E75" stroke="#1C1B17" stroke-width="4"/></svg>`
+};
+
+/* ================= ROUTE (nur über Land!) =================
+   Bahnhof → KKL → zurück zur Seebrücke → über die Brücke →
+   Schwanenplatz → Schweizerhofquai → Nationalquai → zurück →
+   Rathausquai → Weinmarkt → Mühlenplatz */
+const ROUTE_PATH = [
+ [47.0500, 8.3102], // 0 Bahnhofplatz
+ [47.0502, 8.3112], // 1 Europaplatz
+ [47.0504, 8.3121], // 2 KKL
+ [47.0507, 8.3106], // 3 zurück Richtung Brücke
+ [47.0509, 8.3101], // 4 Seebrücke Süd
+ [47.0517, 8.3095], // 5 Seebrücke Mitte
+ [47.0525, 8.3091], // 6 Schwanenplatz
+ [47.0530, 8.3110], // 7 Schweizerhofquai West
+ [47.0534, 8.3133], // 8 Schweizerhofquai Ost
+ [47.0544, 8.3150], // 9 Übergang Nationalquai
+ [47.0552, 8.3160], // 10 Nationalquai
+ [47.0544, 8.3150], // 11 zurück
+ [47.0534, 8.3133], // 12
+ [47.0530, 8.3110], // 13
+ [47.0526, 8.3094], // 14 Schwanenplatz
+ [47.0523, 8.3077], // 15 Rathausquai
+ [47.0524, 8.3051], // 16 Weinmarkt
+ [47.0529, 8.3022]  // 17 Mühlenplatz
+];
+
+/* ================= WESEN =================
+   good:false = Energiefresser (besiegen)
+   good:true  = Energiehelfer (Vertrauen gewinnen) */
+const SPOTS = [
+ {mon:"WATTFALTER", good:false, sprite:MON.falter, dexNr:"01", pathIdx:0, place:"Café am Bahnhofplatz", lat:47.04975, lng:8.31015, icon:"💡", kw:1.4,
+  intro:"Ein wilder WATTFALTER erscheint! Er flattert seit Jahren um zwölf alte Halogenlampen.",
+  qs:[
+   {q:"WATTFALTER liebt Halogen! Was schwächt ihn?",
+    opts:[{t:"Auf LED umrüsten",ok:true},{t:"Nur jede zweite Lampe einschalten",ok:false},{t:"Halogen ist effizient genug",ok:false}],
+    hit:"Volltreffer! LED-STRAHL wirkt – WATTFALTER ist geblendet!"},
+   {q:"Das Café ist nachts leer, alles brennt weiter. Attacke?",
+    opts:[{t:"Bewegungsmelder + Zeitschaltung",ok:true},{t:"Licht anlassen wirkt einladend",ok:false},{t:"Kerzen statt Lampen",ok:false}],
+    hit:"Super effektiv! ZEITSCHALT-HIEB trifft – WATTFALTER trudelt!"}],
+  fact:"LED braucht rund 80 % weniger Strom als Halogen – kombiniert mit Sensorik sinkt der Verbrauch nochmals deutlich."},
+ {mon:"GLUTGOLEM", good:false, sprite:MON.glut, dexNr:"02", pathIdx:2, place:"Grossküche beim KKL", lat:47.05035, lng:8.31210, icon:"🔥", kw:5.5,
+  intro:"Ein wilder GLUTGOLEM erscheint! Er glüht auf Vollgas – aber niemand kocht.",
+  qs:[
+   {q:"GLUTGOLEM glüht im Leerlauf! Was schwächt ihn?",
+    opts:[{t:"Weiterglühen lassen, Aufheizen kostet mehr",ok:false},{t:"Ausschalten, erst bei Bedarf aufheizen",ok:true},{t:"Deckel drauf und laufen lassen",ok:false}],
+    hit:"Volltreffer! ABSCHALT-SCHLAG wirkt – GLUTGOLEM verliert Glut!"},
+   {q:"Womit besiegt man Leerlauf-Hitze langfristig?",
+    opts:[{t:"Umstieg auf Induktion – heizt in Sekunden",ok:true},{t:"Grössere Gussplatten kaufen",ok:false},{t:"Herd nie mehr ausschalten",ok:false}],
+    hit:"Super effektiv! INDUKTIONS-BLITZ trifft – GLUTGOLEM wankt!"}],
+  fact:"Herdplatten im Leerlauf gehören zu den grössten Stromfressern in Grossküchen. Induktion heizt in Sekunden – Leerlauf wird unnötig."},
+ {mon:"WELLENWISPER", good:true, sprite:MON.welle, dexNr:"06", pathIdx:8, place:"Seeufer am Schweizerhofquai", lat:47.05340, lng:8.31330, icon:"💧", kw:2.2,
+  intro:"Ein freundliches WELLENWISPER taucht auf! Es wohnt im Vierwaldstättersee und steckt voller Energie.",
+  qs:[
+   {q:"WELLENWISPER will helfen! Wie nutzt man Seewasser-Energie?",
+    opts:[{t:"Seewasser kühlt und heizt via Wärmepumpe",ok:true},{t:"Man leitet den See in den Keller",ok:false},{t:"Gar nicht – Wasser ist nur zum Trinken",ok:false}],
+    hit:"WELLENWISPER plätschert begeistert – das Vertrauen wächst!"},
+   {q:"Wer nutzt in Luzern schon Energie aus dem See?",
+    opts:[{t:"Zum Beispiel das KKL gleich um die Ecke",ok:true},{t:"Niemand, das ist Zukunftsmusik",ok:false},{t:"Nur die Dampfschiffe",ok:false}],
+    hit:"WELLENWISPER macht eine Freudenwelle – Lokalwissen überzeugt!"}],
+  fact:"Der See ist ein riesiger Energiespeicher: Das KKL kühlt und heizt mit Wasser aus dem Vierwaldstättersee – emissionsarm und leise."},
+ {mon:"WIRBELWYRM", good:false, sprite:MON.wyrm, dexNr:"03", pathIdx:10, place:"Hotelküche am Nationalquai", lat:47.05520, lng:8.31600, icon:"🌀", kw:2.8,
+  intro:"Ein wilder WIRBELWYRM erscheint! Er bläst auf Stufe 5 – lange nach Küchenschluss.",
+  qs:[
+   {q:"WIRBELWYRM dreht durch! Was schwächt ihn?",
+    opts:[{t:"Fenster öffnen statt Lüftung",ok:false},{t:"Bedarfsgesteuert regeln, nachts runterfahren",ok:true},{t:"Vollgas ist Vorschrift",ok:false}],
+    hit:"Volltreffer! BEDARFSREGLER wirkt – WIRBELWYRM verliert Schwung!"},
+   {q:"Die warme Abluft verpufft einfach. Finaler Zug?",
+    opts:[{t:"Wärmerückgewinnung einbauen",ok:true},{t:"Abluft in den Gastraum leiten",ok:false},{t:"Noch stärker lüften",ok:false}],
+    hit:"Super effektiv! WÄRMERÜCKGEWINNUNG trifft – WIRBELWYRM stottert!"}],
+  fact:"Bedarfsgeregelte Lüftungen sparen bis zu 50 % Ventilationsstrom – Wärmerückgewinnung nutzt die Abluft gleich doppelt."},
+ {mon:"RESTLI", good:true, sprite:MON.restli, dexNr:"07", pathIdx:14, place:"Take-away am Schwanenplatz", lat:47.05255, lng:8.30945, icon:"🥡", kw:0.8,
+  intro:"Ein freundliches RESTLI hüpft heran! Es sammelt übrig gebliebenes Essen, bevor es im Abfall landet.",
+  qs:[
+   {q:"RESTLI hasst volle Abfalleimer! Wie machst du es glücklich?",
+    opts:[{t:"Restli-Box anbieten – Übriges den Gästen mitgeben",ok:true},{t:"Grössere Mülltonnen kaufen",ok:false},{t:"Portionen heimlich verkleinern",ok:false}],
+    hit:"RESTLI hüpft vor Freude in die Box – kein Znacht für die Tonne!"},
+   {q:"Was spart vermiedener Food Waste wirklich?",
+    opts:[{t:"Die ganze Energie aus Anbau, Transport und Küche",ok:true},{t:"Nur etwas Platz im Kübel",ok:false},{t:"Nichts – Essen wächst ja nach",ok:false}],
+    hit:"RESTLI glänzt – jedes gerettete Menü zählt doppelt!"}],
+  fact:"Rund ein Viertel des Schweizer Food Waste entsteht in der Gastronomie. Restli-Boxen und clevere Planung sparen Essen, Geld und Energie."},
+ {mon:"FROSTMAUL", good:false, sprite:MON.frost, dexNr:"04", pathIdx:15, place:"Restaurant am Rathausquai", lat:47.05232, lng:8.30770, icon:"🧊", kw:3.2,
+  intro:"Ein wildes FROSTMAUL erscheint! Es hält seine Kühlschranktür sperrangelweit offen.",
+  qs:[
+   {q:"FROSTMAUL verschwendet Kälte! Was schwächt es?",
+    opts:[{t:"Tür schliessen + Selbstschliesser montieren",ok:true},{t:"Kühlschrank kälter stellen",ok:false},{t:"Ignorieren, offene Türen sind normal",ok:false}],
+    hit:"Volltreffer! TÜRSCHLIESSER wirkt – FROSTMAUL fröstelt vor Effizienz!"},
+   {q:"FROSTMAUL steht direkt neben dem heissen Ofen. Was tun?",
+    opts:[{t:"An einen kühleren Standort verschieben",ok:true},{t:"Egal, Kälte ist Kälte",ok:false},{t:"Ofen näher rücken, spart Platz",ok:false}],
+    hit:"Super effektiv! STANDORTWECHSEL trifft – FROSTMAUL taumelt!"}],
+  fact:"Ein offener Gastro-Kühlschrank braucht bis zu 30 % mehr Strom – und neben Wärmequellen nochmals deutlich mehr."},
+ {mon:"SONNENWICHT", good:true, sprite:MON.sonne, dexNr:"05", pathIdx:16, place:"Solardach am Weinmarkt", lat:47.05240, lng:8.30510, icon:"☀️", kw:1.6,
+  intro:"Ein freundliches SONNENWICHT strahlt vom Dach herab! Es möchte Küchen mit Sonnenstrom versorgen.",
+  qs:[
+   {q:"SONNENWICHT sucht ein Zuhause! Womit lockst du es an?",
+    opts:[{t:"Solarpanels aufs Restaurant-Dach",ok:true},{t:"Das Dach schwarz streichen",ok:false},{t:"Mehr Strom vom Netz kaufen",ok:false}],
+    hit:"SONNENWICHT strahlt heller – das Vertrauen wächst!"},
+   {q:"Wann liefert Solar am meisten – und wer profitiert davon?",
+    opts:[{t:"Mittags – genau zur Kochzeit der Gastronomie",ok:true},{t:"Nachts, wenn der Strom billig ist",ok:false},{t:"Nur in den Sommerferien",ok:false}],
+    hit:"SONNENWICHT tanzt vor Freude – Mittagsservice mit Sonnenstrom!"}],
+  fact:"Solarstrom vom eigenen Dach passt perfekt zur Gastronomie: Die Produktionsspitze am Mittag trifft genau auf die Hauptkochzeit."},
+ {mon:"SCHAUMFLUFF", good:true, sprite:MON.schaum, dexNr:"08", pathIdx:17, place:"Beizli am Mühlenplatz", lat:47.05285, lng:8.30230, icon:"🍽️", kw:0,
+  intro:"Ein freundliches SCHAUMFLUFF blubbert vor sich hin! Erkennst du, warum es ein Energiehelfer ist?",
+  qs:[
+   {q:"Die Spülmaschine läuft randvoll beladen. Was denkst du?",
+    opts:[{t:"Voll beladen ist sie effizient – ein Helfer!",ok:true},{t:"Sofort ausschalten, sicher ist sicher",ok:false},{t:"Handabwasch wäre besser",ok:false}],
+    hit:"SCHAUMFLUFF blubbert erfreut und bleibt bei dir!"}],
+  fact:"Eine voll beladene, moderne Spülmaschine ist effizienter als Abwaschen von Hand. Effiziente Geräte sind Helfer, keine Fresser!"}
+];
+
+/* Indizien entlang der Landroute – sie geben den Weg vor */
+const CLUES = [
+ {lat:47.05030, lng:8.31160, txt:"Gastrobetriebe brauchen pro m² rund fünfmal mehr Energie als ein Bürogebäude."},
+ {lat:47.05170, lng:8.30950, txt:"Kühlen und Gefrieren machen in Restaurants oft 30–40 % des Stromverbrauchs aus."},
+ {lat:47.05310, lng:8.31200, txt:"Jedes Kilo Food Waste verschwendet auch die ganze Energie aus Anbau, Transport und Lagerung."},
+ {lat:47.05460, lng:8.31530, txt:"Viele Öfen heizen täglich 1–2 Stunden leer vor – gezieltes Vorheizen spart bares Geld."},
+ {lat:47.05240, lng:8.30840, txt:"Regionale Saisonküche spart Transportenergie – und schmeckt erst noch frischer."},
+ {lat:47.05270, lng:8.30390, txt:"Ein Grad weniger im Gastraum spart rund 6 % Heizenergie – ohne dass es jemand merkt."}
+];
+
+let kw = 19.4, fresser = 0, helfer = 0, resolvedCount = 0, clueCount = 0;
+let userPos = null, testMode = false, activeIdx = null, qIdx = 0, hearts = 3, meter = 0, busy = false;
+
+/* ================= AUDIO ================= */
+let AC = null, musicOn = false, seqTimer = null, seqStep = 0, currentTrack = null;
+const f = m => 440 * Math.pow(2, (m - 69) / 12);
+function ensureAC(){ if(!AC){ AC = new (window.AudioContext || window.webkitAudioContext)(); } if(AC.state === 'suspended') AC.resume(); }
+function tone(midi, when, dur, type, vol){
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.value = f(midi);
+  g.gain.setValueAtTime(vol, when);
+  g.gain.exponentialRampToValueAtTime(0.001, when + dur);
+  o.connect(g).connect(AC.destination);
+  o.start(when); o.stop(when + dur + 0.02);
+}
+function noiseHit(when, dur, vol){
+  const len = AC.sampleRate * dur, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
+  for(let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  const src = AC.createBufferSource(); src.buffer = buf;
+  const g = AC.createGain(); g.gain.value = vol;
+  src.connect(g).connect(AC.destination); src.start(when);
+}
+const BATTLE_LEAD = [64,0,67,0,71,0,76,0, 74,0,71,69, 71,0,67,0,  72,0,71,0,69,0,67,0, 66,64,66,67, 69,0,71,0];
+const BATTLE_BASS = [40,0,40,0, 43,0,43,0, 36,0,36,0, 38,0,38,0,  40,0,40,0, 43,0,43,0, 45,0,45,0, 47,0,47,0];
+const WORLD_LEAD  = [76,0,74,72, 74,0,72,71, 72,0,69,0, 67,0,0,0,  69,0,71,72, 74,0,76,74, 72,0,71,0, 69,0,0,0];
+const WORLD_BASS  = [45,0,0,0, 43,0,0,0, 41,0,0,0, 40,0,0,0,  45,0,0,0, 43,0,0,0, 38,0,0,0, 40,0,0,0];
+function playTrack(name){
+  if(!musicOn){ currentTrack = name; return; }
+  ensureAC(); stopMusic(); currentTrack = name;
+  const battleMode = name === 'battle';
+  const LEAD = battleMode ? BATTLE_LEAD : WORLD_LEAD;
+  const BASS = battleMode ? BATTLE_BASS : WORLD_BASS;
+  const stepDur = battleMode ? 0.13 : 0.17;
+  seqStep = 0;
+  let nextTime = AC.currentTime + 0.05;
+  seqTimer = setInterval(() => {
+    while(nextTime < AC.currentTime + 0.25){
+      const s = seqStep % 32;
+      if(LEAD[s]) tone(LEAD[s], nextTime, stepDur * 0.92, battleMode ? 'square' : 'triangle', battleMode ? 0.05 : 0.055);
+      if(BASS[s]) tone(BASS[s], nextTime, stepDur * 0.92, battleMode ? 'triangle' : 'sine', battleMode ? 0.09 : 0.07);
+      if(battleMode && s % 4 === 2) noiseHit(nextTime, 0.03, 0.02);
+      nextTime += stepDur; seqStep++;
+    }
+  }, 60);
+}
+function stopMusic(){ if(seqTimer){ clearInterval(seqTimer); seqTimer = null; } }
+function sfxCorrect(){ if(!musicOn) return; ensureAC(); const t = AC.currentTime; [72,76,79,84].forEach((m,i) => tone(m, t + i*0.07, 0.12, 'square', 0.07)); }
+function sfxWrong(){ if(!musicOn) return; ensureAC(); const t = AC.currentTime; tone(46, t, 0.25, 'sawtooth', 0.08); tone(45, t+0.12, 0.3, 'sawtooth', 0.08); }
+function sfxHit(){ if(!musicOn) return; ensureAC(); noiseHit(AC.currentTime, 0.15, 0.12); }
+function sfxClue(){ if(!musicOn) return; ensureAC(); const t = AC.currentTime; [79,84,88].forEach((m,i) => tone(m, t + i*0.06, 0.14, 'triangle', 0.09)); }
+function victoryJingle(){
+  if(!musicOn) return;
+  ensureAC(); stopMusic();
+  const t = AC.currentTime;
+  const seq = [[72,0,.11],[72,.12,.11],[72,.24,.11],[72,.36,.2],[68,.6,.2],[70,.84,.2],[72,1.08,.28],[70,1.4,.12],[72,1.52,.5]];
+  seq.forEach(n => { tone(n[0], t + n[1], n[2], 'square', 0.07); tone(n[0]-12, t + n[1], n[2], 'triangle', 0.06); });
+}
+document.getElementById('mute').addEventListener('click', function(){
+  musicOn = !musicOn;
+  this.textContent = musicOn ? '🔊 Musik an' : '🔇 Musik aus';
+  if(musicOn) playTrack(currentTrack || 'world');
+  else stopMusic();
+});
+currentTrack = 'world';
+
+/* ================= KARTE ================= */
+const map = L.map('map', {zoomControl:false}).setView([47.0523, 8.3095], 15);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:19}).addTo(map);
+const tint = document.createElement('div'); tint.id = 'map-tint'; map.getContainer().appendChild(tint);
+
+/* Geführte Route entlang echter Fusswege (Seebrücke statt Luftlinie!) */
+L.polyline(ROUTE_PATH, {color:'#E8962E', weight:3, dashArray:'6 8', opacity:.65}).addTo(map);
+
+const meIcon = L.divIcon({className:'', iconSize:[52,64], iconAnchor:[26,60], html:`<div class="hero-pin"><div class="hero-ring"></div>
+<svg viewBox="0 0 64 72" width="52" height="60" aria-label="Energie-Detektiv:in">
+  <ellipse cx="32" cy="67" rx="15" ry="4" fill="rgba(0,0,0,.28)"/>
+  <rect x="24" y="50" width="7" height="14" rx="3.5" fill="#26333C"/>
+  <rect x="33" y="50" width="7" height="14" rx="3.5" fill="#26333C"/>
+  <path d="M46 36 Q54 40 52 47" stroke="#2F4A5C" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M20 32 Q20 24 32 24 Q44 24 44 32 L46 51 Q32 57 18 51 Z" fill="#2F4A5C" stroke="#1C1B17" stroke-width="2.5"/>
+  <rect x="19" y="43" width="26" height="4.5" rx="2" fill="#E8962E"/>
+  <circle cx="53" cy="52" r="6.5" fill="#BFE3F5" fill-opacity=".85" stroke="#1C1B17" stroke-width="2.5"/>
+  <line x1="49" y1="57" x2="45" y2="62" stroke="#1C1B17" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="32" cy="15" r="11" fill="#F2C9A0" stroke="#1C1B17" stroke-width="2.5"/>
+  <circle cx="28" cy="15" r="1.7" fill="#1C1B17"/>
+  <circle cx="36" cy="15" r="1.7" fill="#1C1B17"/>
+  <path d="M29 20 Q32 22.5 35 20" stroke="#1C1B17" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M21 11 Q21 2 32 2 Q43 2 43 11 Z" fill="#E8962E" stroke="#1C1B17" stroke-width="2.5"/>
+  <rect x="17" y="9.5" width="30" height="5.5" rx="2.75" fill="#E8962E" stroke="#1C1B17" stroke-width="2.5"/>
+</svg></div>`});
+let meMarker = null, accCircle = null;
+const spotMarkers = SPOTS.map((s, i) => {
+  const icon = L.divIcon({className:'', html:`<div class="spot-pin far${s.good ? ' good' : ''}" id="pin${i}">${s.icon}</div>`, iconSize:[40,40], iconAnchor:[20,20]});
+  const m = L.marker([s.lat, s.lng], {icon}).addTo(map);
+  m.bindTooltip('', {permanent:true, direction:'bottom', offset:[0,22], className:'dist-label'});
+  m.on('click', () => tryOpen(i));
+  return m;
+});
+const clueMarkers = CLUES.map((c, i) => {
+  const icon = L.divIcon({className:'', html:`<div class="clue-pin" id="cpin${i}">🔍</div>`, iconSize:[28,28], iconAnchor:[14,14]});
+  return L.marker([c.lat, c.lng], {icon}).addTo(map);
+});
+
+function haversine(a, b){
+  const R = 6371000, r = d => d * Math.PI / 180;
+  const dLat = r(b.lat - a.lat), dLng = r(b.lng - a.lng);
+  const h = Math.sin(dLat/2)**2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function refresh(){
+  if(!userPos) return;
+  SPOTS.forEach((s, i) => {
+    const d = Math.round(haversine(userPos, s));
+    const pin = document.getElementById('pin' + i);
+    const tip = spotMarkers[i].getTooltip();
+    const g = s.good ? ' good' : '';
+    if(s.done){ pin.className = 'spot-pin done' + g; tip.setContent('✓ erledigt'); }
+    else if(d <= UNLOCK_RADIUS){ pin.className = 'spot-pin near' + g; tip.setContent(s.good ? 'Anfreunden!' : 'Kampf möglich!'); }
+    else { pin.className = 'spot-pin far' + g; tip.setContent(d >= 1000 ? (d/1000).toFixed(1) + ' km' : d + ' m'); }
+  });
+  CLUES.forEach((c, i) => {
+    if(c.got) return;
+    if(haversine(userPos, c) <= CLUE_RADIUS) collectClue(i);
+  });
+}
+function collectClue(i){
+  const c = CLUES[i];
+  c.got = true; clueCount++;
+  document.getElementById('dexbtn').textContent = '📕 Dex · 🔍 ' + clueCount + '/' + CLUES.length;
+  document.getElementById('cpin' + i).className = 'clue-pin got';
+  document.getElementById('cpin' + i).textContent = '✓';
+  sfxClue();
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-head').textContent = 'INDIZ ' + clueCount + '/' + CLUES.length + ' GEFUNDEN!';
+  document.getElementById('toast-body').textContent = c.txt;
+  toast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast.classList.remove('show'), 6000);
+}
+function setUser(lat, lng, acc){
+  userPos = {lat, lng};
+  if(!meMarker){
+    meMarker = L.marker([lat, lng], {icon: meIcon, zIndexOffset:1000}).addTo(map);
+    accCircle = L.circle([lat, lng], {radius: acc || 15, color:'#E8962E', weight:1, fillColor:'#E8962E', fillOpacity:.07}).addTo(map);
+    map.setView([lat, lng], 16);
+  } else { meMarker.setLatLng([lat, lng]); accCircle.setLatLng([lat, lng]).setRadius(acc || 15); }
+  refresh();
+}
+function setGpsPill(on, txt){
+  document.getElementById('gps-dot').className = on ? 'on' : '';
+  document.getElementById('gps-txt').textContent = txt;
+}
+if('geolocation' in navigator){
+  navigator.geolocation.watchPosition(
+    p => { if(!testMode){ setUser(p.coords.latitude, p.coords.longitude, p.coords.accuracy); setGpsPill(true, 'GPS aktiv'); } },
+    e => setGpsPill(false, e.code === 1 ? 'GPS abgelehnt' : 'GPS-Fehler'),
+    {enableHighAccuracy:true, maximumAge:3000, timeout:15000});
+} else setGpsPill(false, 'Kein GPS');
+
+/* ---------- Test-Modus: läuft der Landroute entlang ---------- */
+let curP = 0, walkTimer = null;
+const stopsEl = document.getElementById('test-stops');
+SPOTS.forEach((s, i) => {
+  const b = document.createElement('button');
+  b.className = 'tp' + (s.good ? ' tgood' : '');
+  b.textContent = (i+1) + ' ' + s.icon;
+  b.title = s.place;
+  b.addEventListener('click', () => walkRouteTo(i));
+  stopsEl.appendChild(b);
+});
+document.getElementById('test-toggle').addEventListener('click', function(){
+  testMode = !testMode;
+  stopsEl.classList.toggle('show', testMode);
+  this.textContent = testMode ? 'Test-Modus beenden (echtes GPS)' : 'Test-Modus: Route simulieren';
+  if(testMode){ setGpsPill(true, 'Simulation'); curP = 0; setUser(ROUTE_PATH[0][0], ROUTE_PATH[0][1], 10); }
+});
+function walkRouteTo(spotIdx){
+  if(walkTimer){ clearInterval(walkTimer); walkTimer = null; }
+  const target = SPOTS[spotIdx].pathIdx;
+  const pts = [];
+  if(target >= curP){ for(let i = curP; i <= target; i++) pts.push(ROUTE_PATH[i]); }
+  else { for(let i = curP; i >= target; i--) pts.push(ROUTE_PATH[i]); }
+  curP = target;
+  pts.push([SPOTS[spotIdx].lat + 0.00010, SPOTS[spotIdx].lng + 0.00010]);
+  walkAlong(pts);
+}
+function walkAlong(pts){
+  if(!userPos) setUser(pts[0][0], pts[0][1], 10);
+  let seg = 0;
+  function nextSeg(){
+    if(seg >= pts.length - 1) return;
+    const a = pts[seg], b = pts[seg+1];
+    const dist = haversine({lat:a[0],lng:a[1]}, {lat:b[0],lng:b[1]});
+    const steps = Math.max(6, Math.round(dist / 9));
+    let n = 0;
+    walkTimer = setInterval(() => {
+      n++;
+      setUser(a[0] + (b[0]-a[0]) * n/steps, a[1] + (b[1]-a[1]) * n/steps, 10);
+      if(n >= steps){ clearInterval(walkTimer); walkTimer = null; seg++; nextSeg(); }
+    }, 38);
+  }
+  nextSeg();
+}
+
+/* ================= MONSTERDEX ================= */
+const dex = document.getElementById('dex');
+document.getElementById('dexbtn').addEventListener('click', () => { renderDex(); dex.classList.add('show'); });
+document.getElementById('dex-close').addEventListener('click', () => dex.classList.remove('show'));
+function dexCard(s){
+  const cls = 'dex-card' + (s.good ? ' goodcard' : '') + (s.done ? '' : ' locked');
+  return s.done
+    ? `<div class="${cls}">${s.sprite}<div class="dex-num">Nr. ${s.dexNr}</div><div class="dex-name">${s.mon}</div><div class="dex-fact">${s.fact}</div></div>`
+    : `<div class="${cls}">${s.sprite}<div class="dex-num">Nr. ${s.dexNr}</div><div class="dex-name">???</div><div class="dex-fact">Noch nicht entdeckt. Es wartet bei: ${s.place}.</div></div>`;
+}
+function renderDex(){
+  document.getElementById('dex-bad').innerHTML  = SPOTS.filter(s => !s.good).map(dexCard).join('');
+  document.getElementById('dex-good').innerHTML = SPOTS.filter(s =>  s.good).map(dexCard).join('');
+  document.getElementById('dex-clues').innerHTML = CLUES.map((c, i) => c.got
+    ? `<div class="clue-item"><span class="ci-ico">🔍</span><span>${c.txt}</span></div>`
+    : `<div class="clue-item locked"><span class="ci-ico">❓</span><span>Indiz ${i+1} – noch nicht gefunden. Folge der gestrichelten Route!</span></div>`
+  ).join('');
+}
+
+/* ================= KAMPF / BEGEGNUNG ================= */
+const battle = document.getElementById('battle');
+const btext = document.getElementById('btext');
+const bopts = document.getElementById('bopts');
+const sheet = document.getElementById('sheet');
+const sc = document.getElementById('sheet-content');
+
+function tryOpen(i){
+  const s = SPOTS[i];
+  if(s.done) return;
+  const d = userPos ? Math.round(haversine(userPos, s)) : Infinity;
+  if(d > UNLOCK_RADIUS){
+    sc.innerHTML = `<div class="sheet-title">Noch ${d >= 1000 ? (d/1000).toFixed(1)+' km' : d+' m'} bis ${s.place}</div>
+      <div class="sheet-desc">${s.good ? 'Ein freundlicher Energiehelfer wartet dort!' : 'Ein wilder Energiefresser lauert dort!'} Folge der gestrichelten Route und sammle unterwegs Indizien 🔍 – ab ${UNLOCK_RADIUS} m Distanz geht es los.</div>
+      <button class="btn btn-dark" onclick="document.getElementById('sheet').classList.remove('open')">Verstanden</button>`;
+    sheet.classList.add('open');
+    return;
+  }
+  startEncounter(i);
+}
+function typeText(el, str, done){
+  el.textContent = '';
+  let n = 0;
+  const iv = setInterval(() => { el.textContent = str.slice(0, ++n); if(n >= str.length){ clearInterval(iv); if(done) done(); } }, 22);
+}
+function startEncounter(i){
+  activeIdx = i; qIdx = 0; hearts = 3; busy = false;
+  const s = SPOTS[i];
+  meter = s.good ? 0 : 100;
+  const ew = document.getElementById('enemy-wrap');
+  ew.innerHTML = s.sprite; ew.className = ''; ew.style.animation = '';
+  document.getElementById('enemy-name').textContent = s.mon + (s.good ? ' · Helfer' : ' · Lv.' + Math.round(s.kw * 3));
+  document.getElementById('hp-tag').textContent = s.good ? 'VERTRAUEN' : 'KW';
+  const hp = document.getElementById('enemy-hp');
+  hp.style.width = meter + '%';
+  hp.style.background = 'var(--teal)';
+  document.getElementById('hearts').textContent = '❤️❤️❤️';
+  bopts.innerHTML = '';
+  battle.classList.add('show', 'entering');
+  setTimeout(() => battle.classList.remove('entering'), 750);
+  playTrack(s.good ? 'world' : 'battle');
+  typeText(btext, s.intro, () => setTimeout(showQuestion, 500));
+}
+function showQuestion(){
+  const s = SPOTS[activeIdx], Q = s.qs[qIdx];
+  typeText(btext, Q.q);
+  bopts.innerHTML = '';
+  Q.opts.forEach(o => {
+    const b = document.createElement('button');
+    b.className = 'bopt'; b.textContent = '▶ ' + o.t;
+    b.addEventListener('click', () => answer(o, b));
+    bopts.appendChild(b);
+  });
+}
+function answer(o, btn){
+  if(busy) return; busy = true;
+  const s = SPOTS[activeIdx];
+  const ew = document.getElementById('enemy-wrap');
+  const hp = document.getElementById('enemy-hp');
+  const delta = Math.ceil(100 / s.qs.length);
+  if(o.ok){
+    btn.classList.add('right'); sfxCorrect();
+    if(s.good){
+      /* Vertrauen gewinnen: das Wesen freut sich und hüpft */
+      ew.classList.add('joy');
+      meter = Math.min(100, meter + delta);
+      hp.style.width = meter + '%';
+      typeText(btext, s.qs[qIdx].hit);
+      setTimeout(() => {
+        ew.classList.remove('joy');
+        qIdx++; busy = false;
+        if(meter >= 100 || qIdx >= s.qs.length) winEncounter();
+        else showQuestion();
+      }, 1400);
+    } else {
+      /* Fresser schwächen: Attacke! */
+      document.getElementById('me-wrap').classList.add('lunge');
+      setTimeout(() => {
+        sfxHit();
+        ew.classList.add('hitflash');
+        meter = Math.max(0, meter - delta);
+        hp.style.width = meter + '%';
+        hp.style.background = meter > 50 ? 'var(--teal)' : (meter > 20 ? 'var(--quest)' : 'var(--red)');
+        typeText(btext, s.qs[qIdx].hit);
+        setTimeout(() => {
+          document.getElementById('me-wrap').classList.remove('lunge');
+          ew.classList.remove('hitflash');
+          qIdx++; busy = false;
+          if(meter <= 0 || qIdx >= s.qs.length) winEncounter();
+          else showQuestion();
+        }, 1400);
+      }, 350);
+    }
+  } else {
+    btn.classList.add('wrong'); sfxWrong();
+    if(s.good){
+      /* Der Helfer erschrickt */
+      ew.classList.add('sad');
+      hearts--;
+      document.getElementById('hearts').textContent = '❤️'.repeat(hearts) + '🖤'.repeat(3 - hearts);
+      typeText(btext, s.mon + ' versteckt sich erschrocken... Versuch es behutsamer!');
+      setTimeout(() => {
+        ew.classList.remove('sad');
+        btn.disabled = true; btn.style.opacity = .45;
+        busy = false;
+        if(hearts <= 0) loseEncounter();
+        else typeText(btext, s.qs[qIdx].q);
+      }, 1400);
+    } else {
+      ew.classList.add('lunge');
+      setTimeout(() => {
+        sfxHit();
+        battle.classList.add('shakeAll');
+        hearts--;
+        document.getElementById('hearts').textContent = '❤️'.repeat(hearts) + '🖤'.repeat(3 - hearts);
+        typeText(btext, s.mon + ' greift an! Das war nicht die richtige Massnahme...');
+        setTimeout(() => {
+          ew.classList.remove('lunge');
+          battle.classList.remove('shakeAll');
+          btn.disabled = true; btn.style.opacity = .45;
+          busy = false;
+          if(hearts <= 0) loseEncounter();
+          else typeText(btext, s.qs[qIdx].q);
+        }, 1400);
+      }, 350);
+    }
+  }
+}
+function winEncounter(){
+  const s = SPOTS[activeIdx];
+  s.done = true; resolvedCount++;
+  victoryJingle();
+  const ew = document.getElementById('enemy-wrap');
+  if(s.good){
+    ew.classList.add('joy');
+    helfer++;
+    document.getElementById('team').innerHTML = helfer + ' <span>/ 4</span>';
+  } else {
+    ew.style.animation = 'none';
+    ew.classList.add('faint');
+    fresser++;
+    document.getElementById('score').innerHTML = fresser + ' <span>/ 4</span>';
+  }
+  if(s.kw){
+    kw = Math.round((kw - s.kw) * 10) / 10;
+    document.getElementById('kw').innerHTML = kw.toFixed(1) + ' <span>kW</span>';
+  }
+  typeText(btext, s.good
+    ? s.mon + ' schliesst sich deinem Team an!' + (s.kw ? ' (−' + s.kw.toFixed(1) + ' kW)' : '')
+    : s.mon + ' wurde besiegt und im Monsterdex registriert! (−' + s.kw.toFixed(1) + ' kW)');
+  bopts.innerHTML = '';
+  setTimeout(() => {
+    bopts.innerHTML = `<div style="font-family:'Space Grotesk';font-size:13px;line-height:1.5;background:${s.good ? '#E1F5EE' : 'var(--quest-pale)'};border:2px solid ${s.good ? 'var(--teal-dark)' : 'var(--quest-dark)'};border-radius:10px;padding:12px;color:${s.good ? 'var(--teal-dark)' : 'var(--quest-dark)'};">${s.fact}</div>`;
+    const done = resolvedCount === SPOTS.length;
+    const b = document.createElement('button');
+    b.className = 'bopt bnext';
+    b.textContent = done ? '▶ Quest abschliessen' : '▶ Weiter geht die Quest';
+    b.addEventListener('click', () => {
+      battle.classList.remove('show');
+      playTrack('world');
+      refresh();
+      if(done) showFinish();
+    });
+    bopts.appendChild(b);
+  }, 1600);
+}
+function loseEncounter(){
+  const s = SPOTS[activeIdx];
+  stopMusic();
+  typeText(btext, s.good
+    ? s.mon + ' ist scheu geworden und verschwindet... Versuch es gleich nochmals!'
+    : 'Du bist erschöpft! Der Energiefresser entkommt – aber du kannst es gleich nochmals versuchen.');
+  bopts.innerHTML = '';
+  const b1 = document.createElement('button');
+  b1.className = 'bopt'; b1.textContent = '▶ Nochmals versuchen';
+  b1.addEventListener('click', () => startEncounter(activeIdx));
+  const b2 = document.createElement('button');
+  b2.className = 'bopt'; b2.textContent = '▶ Zurück zur Karte';
+  b2.addEventListener('click', () => { battle.classList.remove('show'); playTrack('world'); });
+  bopts.appendChild(b1); bopts.appendChild(b2);
+}
+function showFinish(){
+  const msg = encodeURIComponent('Ich habe in Luzern alle 4 Energiefresser besiegt, 4 Energiehelfer angefreundet und 17.5 kW gespart! ⚡ Mach mit beim Energiefresser-Jäger von Circular Quest Luzern:');
+  sc.innerHTML = `<div class="sheet-title">🏆 Quest abgeschlossen!</div>
+    <div class="sheet-desc">Alle 4 Energiefresser besiegt und alle 4 Energiehelfer in deinem Team – Luzern spart dank dir 17.5 kW. ${clueCount === CLUES.length ? 'Und dein Monsterdex ist komplett, alle ' + CLUES.length + ' Indizien gefunden!' : 'Auf der Route warten noch ' + (CLUES.length - clueCount) + ' Indizien für den kompletten Dex.'}</div>
+    <a class="btn btn-quest" style="text-decoration:none;margin-bottom:8px;" target="_blank" rel="noopener" href="https://wa.me/?text=${msg}%20${encodeURIComponent(location.href)}">Erfolg per WhatsApp teilen</a>
+    <button class="btn btn-dark" onclick="document.getElementById('sheet').classList.remove('open')">Fertig</button>`;
+  sheet.classList.add('open');
+}
+refresh();
+</script>
+</body>
+</html>
