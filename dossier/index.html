@@ -45,8 +45,9 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 /* ---------- Karten-Pins: Fall-Siegel ---------- */
 .case-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
 .case-pin{position:relative;width:44px;height:44px;border-radius:50%;background:#FDFBF4;border:3px solid var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(43,38,32,.35);}
-.case-pin .cp-nr{font-family:var(--type);font-size:15px;line-height:1;}
-.case-pin .cp-lbl{font-family:var(--type);font-size:6px;letter-spacing:.04em;color:var(--muted);}
+.case-pin svg{width:24px;height:24px;display:block;}
+.cp-chip{position:absolute;top:-10px;left:50%;transform:translateX(-50%) rotate(-4deg);font-family:var(--type);font-size:9px;line-height:1;padding:2px 6px;border-radius:2px;background:var(--red);color:#FDFBF4;box-shadow:1px 1px 0 rgba(43,38,32,.35);white-space:nowrap;}
+.case-pin.witness .cp-chip{background:var(--teal);}
 .case-pin.witness{border-color:var(--teal);border-style:double;border-width:4px;}
 .case-pin.near{background:var(--quest);animation:pulse 1.8s infinite;}
 .case-pin.witness.near{background:#DDEFE7;animation:pulseT 1.8s infinite;}
@@ -325,11 +326,16 @@ const CLUE_RADIUS   = 35;
 
 /* ================= ROUTE (Altstadt, nur Fusswege) ================= */
 const ROUTE_PATH = [
- [47.0505, 8.3098], [47.0504, 8.3105], [47.0504, 8.3111],
- [47.0506, 8.3100], [47.0508, 8.3094], [47.0515, 8.3090], [47.0521, 8.3086],
- [47.0524, 8.3083], [47.0527, 8.3079], [47.0526, 8.3072], [47.0522, 8.3070],
- [47.0520, 8.3068], [47.0520, 8.3055], [47.0521, 8.3051], [47.0516, 8.3043],
- [47.0520, 8.3038], [47.0523, 8.3032]
+ [47.0505, 8.3096], [47.0503, 8.3101], [47.0504, 8.3106], [47.0506, 8.3110],
+ [47.0504, 8.3111],                                        /* KKL */
+ [47.0507, 8.3109], [47.0510, 8.3105], [47.0512, 8.3102],  /* zur Seebruecke */
+ [47.0517, 8.3094],                                        /* auf der Bruecke */
+ [47.0522, 8.3087], [47.0524, 8.3083],                     /* Schwanenplatz */
+ [47.0527, 8.3078], [47.0526, 8.3072],                     /* Grendel */
+ [47.0523, 8.3070], [47.0520, 8.3068],                     /* Rathausquai */
+ [47.0519, 8.3062], [47.0520, 8.3056], [47.0521, 8.3051],  /* Unter der Egg */
+ [47.0520, 8.3047], [47.0517, 8.3044], [47.0516, 8.3042],  /* Weinmarkt */
+ [47.0519, 8.3038], [47.0522, 8.3034], [47.0523, 8.3032]   /* Muehlenplatz */
 ];
 
 /* ================= FÄLLE =================
@@ -343,14 +349,14 @@ const CASES = [
   task:{type:'lupe'},
   fact:"LED braucht rund 80 % weniger Strom als Halogen – kombiniert mit Sensorik sinkt der Verbrauch nochmals deutlich.",
   home:"Alte Halogenspots im Flur oder über dem Esstisch? Der Wechsel auf LED spart pro Lampe rund 80 % Strom – im Haushalt schnell über CHF 100 pro Jahr."},
- {nr:"02", title:"Die glühende Spur", witness:false, pathIdx:2, place:"Grossküche beim KKL", lat:47.0504, lng:8.3111, kw:5.5, chf:1100,
+ {nr:"02", title:"Die glühende Spur", witness:false, pathIdx:4, place:"Grossküche beim KKL", lat:47.0504, lng:8.3111, kw:5.5, chf:1100,
   brief:"In einer Grossküche glühen zwei Kochplatten auf höchster Stufe – doch der Herd ist verwaist. Die Wärmebildkamera glüht rot.",
   obs:{q:"Beobachtung vor Ort: Was macht das KKL schon von weitem unverkennbar?",
     opts:[{t:"Das riesige, weit auskragende Flachdach",ok:true},{t:"Eine goldene Kuppel",ok:false},{t:"Ein hoher Uhrturm",ok:false}]},
   task:{type:'minigame'},
   fact:"Herdplatten im Leerlauf gehören zu den grössten Stromfressern in Grossküchen. Induktion heizt in Sekunden – Leerlauf wird unnötig.",
   home:"Der Küchen-Trick für daheim: Deckel auf die Pfanne (spart bis zu 30 %), Restwärme nutzen – und der Backofen braucht fürs meiste gar kein Vorheizen."},
- {nr:"03", title:"Die geretteten Menüs", witness:true, pathIdx:7, place:"Take-away am Schwanenplatz", lat:47.0524, lng:8.3083, kw:0.8, chf:2400,
+ {nr:"03", title:"Die geretteten Menüs", witness:true, pathIdx:10, place:"Take-away am Schwanenplatz", lat:47.0524, lng:8.3083, kw:0.8, chf:2400,
   brief:"Ein Take-away gibt übrig gebliebene Menüs am Abend in Boxen mit, statt sie zu entsorgen. Ein möglicher Kronzeuge für die Detektei.",
   obs:{q:"Beobachtung vor Ort: Welche Tiere geben dem Schwanenplatz seinen Namen – und ziehen meist gleich nebenan ihre Runden?",
     opts:[{t:"Schwäne",ok:true},{t:"Seelöwen",ok:false},{t:"Pfauen",ok:false}]},
@@ -362,7 +368,7 @@ const CASES = [
      {t:"Buffet bis zur letzten Minute randvoll nachgefüllt", cat:'B'}]},
   fact:"Rund ein Viertel des Schweizer Food Waste entsteht in der Gastronomie. Restli-Boxen und clevere Planung sparen Essen, Geld und Energie.",
   home:"Reste-Tag einführen: ein fester Abend pro Woche für die 'Restli' der Woche. Das spart im Haushalt Hunderte Franken – und jede Menge graue Energie."},
- {nr:"04", title:"Der nächtliche Luftzug", witness:false, pathIdx:9, place:"Hotelküche am Grendel", lat:47.0526, lng:8.3072, kw:2.8, chf:1300,
+ {nr:"04", title:"Der nächtliche Luftzug", witness:false, pathIdx:12, place:"Hotelküche am Grendel", lat:47.0526, lng:8.3072, kw:2.8, chf:1300,
   brief:"Lange nach Küchenschluss rauscht eine Abluftanlage auf Stufe 5 in die Nacht. Der Täter bläst warme Luft – und Geld – zum Kamin hinaus.",
   obs:{q:"Beobachtung vor Ort: Der Grendel ist für den Verkehr ...?",
     opts:[{t:"Eine reine Fussgängerzone",ok:true},{t:"Eine vierspurige Hauptstrasse",ok:false},{t:"Eine Tramlinie",ok:false}]},
@@ -371,7 +377,7 @@ const CASES = [
     reveal:"Bis zu 50 % – nachts und in Nebenzeiten läuft die Anlage sonst schlicht umsonst."},
   fact:"Bedarfsgeregelte Lüftungen sparen bis zu 50 % Ventilationsstrom – Wärmerückgewinnung nutzt die Abluft gleich doppelt.",
   home:"Die Dunstabzugshaube muss nicht auf Stufe 3 durchlaufen: Beim Kochen bedarfsgerecht schalten, danach 5 Minuten nachlaufen lassen – das genügt."},
- {nr:"05", title:"Die offene Tür", witness:false, pathIdx:11, place:"Restaurant am Rathausquai", lat:47.0520, lng:8.3068, kw:3.2, chf:800,
+ {nr:"05", title:"Die offene Tür", witness:false, pathIdx:14, place:"Restaurant am Rathausquai", lat:47.0520, lng:8.3068, kw:3.2, chf:800,
   brief:"Ein Getränkekühlschrank steht sperrangelweit offen – 'für den schnellen Zugriff', sagt das Personal. Die Kälte flieht, der Zähler rennt.",
   obs:{q:"Beobachtung vor Ort: Welches berühmte Bauwerk sehen Sie vom Rathausquai aus flussaufwärts über die Reuss?",
     opts:[{t:"Die Kapellbrücke mit dem Wasserturm",ok:true},{t:"Die Spreuerbrücke",ok:false},{t:"Eine moderne Glasbrücke",ok:false}]},
@@ -382,7 +388,7 @@ const CASES = [
      {who:"Der Lernende", t:"«Ein Selbstschliesser an der Tür kostet wenig und spart sofort.»", lie:false}]},
   fact:"Ein offener Gastro-Kühlschrank braucht bis zu 30 % mehr Strom – und neben Wärmequellen nochmals deutlich mehr.",
   home:"Kühlschrank-Check daheim: 7 °C reichen völlig, Dichtung mit dem Papiertest prüfen – und das Gerät bitte nicht neben Herd oder Heizung stellen."},
- {nr:"06", title:"Die Kraft aus dem Wasser", witness:true, pathIdx:13, place:"Reussufer Unter der Egg", lat:47.0521, lng:8.3051, kw:2.2, chf:1500,
+ {nr:"06", title:"Die Kraft aus dem Wasser", witness:true, pathIdx:17, place:"Reussufer Unter der Egg", lat:47.0521, lng:8.3051, kw:2.2, chf:1500,
   brief:"Direkt vor der Altstadt fliesst ein riesiger Energiespeicher vorbei. Ein stiller Verbündeter – man muss ihn nur anzapfen.",
   obs:{q:"Beobachtung vor Ort: Die Promenade Unter der Egg verläuft unter ...?",
     opts:[{t:"Historischen Arkadenbögen",ok:true},{t:"Einem modernen Glasdach",ok:false},{t:"Einer Stahlbrücke",ok:false}]},
@@ -390,7 +396,7 @@ const CASES = [
     steps:["Wasser wird in der Tiefe des Sees gefasst","Eine Wärmepumpe überträgt die Wärme bzw. Kälte ans Gebäude","Das Wasser fliesst kaum verändert in den See zurück"]},
   fact:"See und Reuss sind riesige Energiespeicher: Das KKL kühlt und heizt mit Wasser aus dem Vierwaldstättersee – emissionsarm und leise.",
   home:"Warmwasser ist im Haushalt der zweitgrösste Energieposten: Ein Sparduschkopf halbiert den Verbrauch – ganz ohne Komfortverlust."},
- {nr:"07", title:"Das Dach voller Sonne", witness:true, pathIdx:14, place:"Solardach am Weinmarkt", lat:47.0516, lng:8.3042, kw:1.6, chf:1200,
+ {nr:"07", title:"Das Dach voller Sonne", witness:true, pathIdx:20, place:"Solardach am Weinmarkt", lat:47.0516, lng:8.3042, kw:1.6, chf:1200,
   brief:"Über den Gassen liegt ungenutztes Kapital: Dachflächen in bester Südlage. Ein Kronzeuge, der pünktlich zur Mittagszeit liefert.",
   obs:{q:"Beobachtung vor Ort: Was steht mitten auf dem historischen Weinmarkt?",
     opts:[{t:"Ein kunstvoller alter Brunnen",ok:true},{t:"Eine Litfasssäule",ok:false},{t:"Ein Karussell",ok:false}]},
@@ -399,7 +405,7 @@ const CASES = [
     reveal:"Gut die Hälfte – exakt dann, wenn die Küche auf Hochtouren läuft. Solar und Gastronomie sind ein Traumpaar."},
   fact:"Solarstrom vom eigenen Dach passt perfekt zur Gastronomie: Die Produktionsspitze am Mittag trifft genau auf die Hauptkochzeit.",
   home:"Balkon-Solar gibt es ab wenigen hundert Franken: einstecken, Grundlast decken, fertig – auch für Mieter:innen."},
- {nr:"08", title:"Die fleissige Maschine", witness:true, pathIdx:16, place:"Beizli am Mühlenplatz", lat:47.0523, lng:8.3032, kw:0, chf:0,
+ {nr:"08", title:"Die fleissige Maschine", witness:true, pathIdx:23, place:"Beizli am Mühlenplatz", lat:47.0523, lng:8.3032, kw:0, chf:0,
   brief:"Eine anonyme Meldung bezichtigt die Spülmaschine der Verschwendung. Doch Vorsicht: Nicht jeder Verdacht hält der Prüfung stand.",
   obs:{q:"Beobachtung vor Ort: Was sehen Sie vom Mühlenplatz aus in der Reuss?",
     opts:[{t:"Das historische Nadelwehr",ok:true},{t:"Ein Hausboot",ok:false},{t:"Eine Schiffsschleuse",ok:false}]},
@@ -660,7 +666,7 @@ function threadCoords(path){ /* wellige Zwischenpunkte: die Schnur haengt leicht
     const len = Math.hypot(dx, dy) || 1;
     const px = -dy/len, py = dx/len; /* Senkrechte */
     const segs = Math.max(5, Math.round(haversine({lat:a[0],lng:a[1]}, {lat:b[0],lng:b[1]}) / 10));
-    const amp = (0.6 + 0.5 * Math.sin(i * 2.7)) * 0.000016 * (i % 2 ? 1 : -1);
+    const amp = (0.6 + 0.5 * Math.sin(i * 2.7)) * 0.00001 * (i % 2 ? 1 : -1);
     for(let n = 0; n < segs; n++){
       const t = n / segs;
       const sag = Math.sin(t * Math.PI) * amp;
@@ -677,12 +683,12 @@ function addPushpins(){ /* schwarze Stecknadeln an jeder Abzweigung */
   for(let i = 1; i < ROUTE_PATH.length - 1; i++){
     let d = Math.abs(bearing(ROUTE_PATH[i-1], ROUTE_PATH[i]) - bearing(ROUTE_PATH[i], ROUTE_PATH[i+1]));
     if(d > Math.PI) d = 2*Math.PI - d;
-    if(d > 0.3) pts.push(ROUTE_PATH[i]);
+    if(d > 0.55) pts.push(ROUTE_PATH[i]);
   }
   pts.push(ROUTE_PATH[ROUTE_PATH.length - 1]);
   pts.forEach(p => {
     /* keine Nadel, wo schon ein Fall-Siegel sitzt */
-    if(CASES.some(s => haversine({lat:p[0], lng:p[1]}, s) < 18)) return;
+    if(CASES.some(s => haversine({lat:p[0], lng:p[1]}, s) < 26)) return;
     const el = document.createElement('div');
     el.style.pointerEvents = 'none';
     el.innerHTML = `<svg width="20" height="26" viewBox="0 0 20 26">
@@ -696,10 +702,21 @@ function addPushpins(){ /* schwarze Stecknadeln an jeder Abzweigung */
 }
 
 /* ---------- Marker ---------- */
+/* Motiv-Icons: Verdächtige in Tinte, Kronzeugen in Grün */
+const PIN_ICONS = {
+ '01': `<svg viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="9.5" r="5.5"/><line x1="9.5" y1="17" x2="14.5" y2="17"/><line x1="10.2" y1="20" x2="13.8" y2="20"/></svg>`,
+ '02': `<svg viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 Q17 9 16.5 13.5 A4.8 4.8 0 0 1 7.5 13.5 Q7 9 12 3 Z"/><path d="M12 20.5 A2.2 2.2 0 0 0 14 17.5"/></svg>`,
+ '03': `<svg viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="9" width="15" height="10" rx="2"/><path d="M4.5 12 L19.5 12"/><path d="M13 9 Q12.5 4.5 17 3.5 Q17.3 7.6 13 9 Z"/></svg>`,
+ '04': `<svg viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="2.2"/><path d="M12 9.5 Q12 4 16 4.8 Q15.5 9 12 9.5 Z"/><path d="M14.5 12 Q20 12 19.2 16 Q15 15.5 14.5 12 Z"/><path d="M9.5 12 Q4 12 4.8 8 Q9 8.5 9.5 12 Z"/><path d="M12 14.5 Q12 20 8 19.2 Q8.5 15 12 14.5 Z"/></svg>`,
+ '05': `<svg viewBox="0 0 24 24" fill="none" stroke="#2B2620" stroke-width="2.2" stroke-linecap="round"><rect x="6.5" y="3.5" width="11" height="17" rx="2"/><line x1="6.5" y1="10" x2="17.5" y2="10"/><line x1="9.5" y1="6" x2="9.5" y2="8"/><line x1="9.5" y1="13" x2="9.5" y2="16"/></svg>`,
+ '06': `<svg viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2.4" stroke-linecap="round"><path d="M3 9.5 q3 -3 6 0 t6 0 t6 0"/><path d="M3 15.5 q3 -3 6 0 t6 0 t6 0"/></svg>`,
+ '07': `<svg viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><line x1="12" y1="3" x2="12" y2="5.2"/><line x1="12" y1="18.8" x2="12" y2="21"/><line x1="3" y1="12" x2="5.2" y2="12"/><line x1="18.8" y1="12" x2="21" y2="12"/><line x1="5.6" y1="5.6" x2="7.2" y2="7.2"/><line x1="16.8" y1="16.8" x2="18.4" y2="18.4"/></svg>`,
+ '08': `<svg viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="13" r="7"/><circle cx="12" cy="13" r="3"/><circle cx="7" cy="5" r="1.4"/><circle cx="12" cy="3.6" r="1.4"/><circle cx="17" cy="5" r="1.4"/></svg>`
+};
 const caseMarkers = CASES.map((s, i) => {
   const el = document.createElement('div');
   el.className = 'case-wrap';
-  el.innerHTML = `<div class="case-pin far${s.witness ? ' witness' : ''}" id="pin${i}"><span class="cp-nr">${s.nr}</span><span class="cp-lbl">FALL</span></div><div class="dist-label" id="lab${i}">…</div>`;
+  el.innerHTML = `<div class="case-pin far${s.witness ? ' witness' : ''}" id="pin${i}"><span class="cp-chip">${s.witness ? 'ZEUGE' : 'FALL'} ${s.nr}</span>${PIN_ICONS[s.nr]}</div><div class="dist-label" id="lab${i}">…</div>`;
   el.addEventListener('click', () => tryOpen(i));
   return new maplibregl.Marker({element:el, anchor:'center'}).setLngLat([s.lng, s.lat]).addTo(map);
 });
