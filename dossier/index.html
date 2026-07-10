@@ -30,17 +30,17 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 .hud-card small{font-family:var(--type);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#C9BFA8;display:block;margin-bottom:3px;}
 .hud-card strong{font-size:18px;font-weight:700;line-height:1.1;}
 .hud-card strong span{font-size:12px;font-weight:500;color:#C9BFA8;}
+.hud-card.main{flex:1.45;}
+.hud-card.main strong{font-size:24px;}
+.hud-card:not(.main){padding:8px 10px;}
+.hud-card:not(.main) strong{font-size:15px;}
+.hud-card:not(.main) strong span{font-size:10px;}
 .hud-sub{font-family:var(--type);font-size:8.5px;color:#C9BFA8;margin-top:3px;letter-spacing:.03em;}
 #brand{position:absolute;top:78px;left:14px;z-index:1000;background:var(--quest);color:var(--ink);font-family:var(--type);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:7px 10px;border-radius:2px;box-shadow:2px 2px 0 rgba(43,38,32,.3);transform:rotate(-1deg);}
 #gps-pill{position:absolute;top:78px;right:14px;z-index:1000;background:#FDFBF4;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px;}
 #gps-dot{width:8px;height:8px;border-radius:50%;background:var(--red);}
 #gps-dot.on{background:var(--teal);animation:blink 2s infinite;}
 @keyframes blink{50%{opacity:.4}}
-#soundbtn{position:absolute;top:120px;right:14px;z-index:1000;background:#FDFBF4;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;}
-#musicbtn{position:absolute;top:162px;right:14px;z-index:1000;background:#FDFBF4;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;}
-#boardbtn{position:absolute;top:246px;right:14px;z-index:1000;background:#8E2F1E;color:var(--paper);border:none;border-radius:4px;padding:9px 14px;font-family:var(--type);font-size:11px;cursor:pointer;box-shadow:2px 2px 0 rgba(43,38,32,.3);}
-#hazbtn{position:absolute;top:288px;right:14px;z-index:1000;background:#FDFBF4;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;}
-#aktenbtn{position:absolute;top:204px;right:14px;z-index:1000;background:var(--ink);color:var(--paper);border:none;border-radius:4px;padding:9px 14px;font-family:var(--type);font-size:11px;cursor:pointer;box-shadow:2px 2px 0 rgba(43,38,32,.3);}
 
 /* ---------- Karten-Pins: Fall-Siegel ---------- */
 .case-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
@@ -58,7 +58,8 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 @keyframes pulseT{0%{box-shadow:0 0 0 0 rgba(15,110,86,.45)}70%{box-shadow:0 0 0 16px rgba(15,110,86,0)}100%{box-shadow:0 0 0 0 rgba(15,110,86,0)}}
 .dist-label{background:var(--ink);color:var(--paper);font-family:var(--type);font-size:9px;padding:3px 8px;border-radius:2px;white-space:nowrap;}
 .clue-pin{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#FDFBF4;border:2px dashed var(--brown);font-size:12px;animation:clueBob 2.2s ease-in-out infinite;cursor:default;}
-.clue-pin.got{border:2px solid var(--teal);background:#DDEFE7;animation:none;opacity:.7;}
+.clue-pin svg{width:13px;height:13px;stroke:#6B5335;stroke-width:2.6;fill:none;stroke-linecap:round;}
+.clue-pin.got{border:2px solid var(--teal);background:#DDEFE7;animation:none;opacity:.7;font-size:12px;color:var(--teal);}
 @keyframes clueBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .hero-pin{position:relative;width:58px;height:74px;}
 .hero-pin .hero-ring{position:absolute;left:50%;bottom:2px;width:36px;height:12px;margin-left:-18px;border-radius:50%;border:2px solid rgba(107,83,53,.8);animation:heroRing 1.9s ease-out infinite;}
@@ -85,8 +86,14 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 #toast .t-body{font-size:14px;line-height:1.45;}
 
 /* ---------- Test-Modus ---------- */
-#testbar{position:absolute;bottom:14px;left:14px;right:14px;z-index:1000;display:flex;flex-direction:column;gap:8px;align-items:center;}
-#test-toggle{font-family:inherit;font-size:13px;font-weight:500;background:#FDFBF4;border:1px solid var(--line);border-radius:999px;padding:9px 16px;cursor:pointer;}
+#toolbar{position:absolute;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:1001;display:flex;background:var(--ink);border-radius:6px;box-shadow:3px 3px 0 rgba(43,38,32,.3);padding:5px 4px;}
+.tb{flex:1;background:none;border:none;color:#EDE6D2;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--type);font-size:8px;letter-spacing:.07em;padding:6px 2px;cursor:pointer;border-radius:4px;}
+.tb svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.tb.on{color:var(--quest);}
+.tb:active{background:rgba(255,255,255,.08);}
+.bi{width:15px;height:15px;vertical-align:-2.5px;margin-right:7px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:inline-block;}
+.maplibregl-ctrl-bottom-right{bottom:72px;}
+#testbar{position:absolute;bottom:calc(76px + env(safe-area-inset-bottom));left:14px;right:14px;z-index:1000;display:flex;flex-direction:column;gap:8px;align-items:center;}
 #test-stops{display:none;gap:6px;flex-wrap:wrap;justify-content:center;}
 #test-stops.show{display:flex;}
 .tp{font-family:var(--type);font-size:10px;background:var(--ink);color:var(--paper);border:none;border-radius:3px;padding:8px 10px;cursor:pointer;}
@@ -246,24 +253,26 @@ input[type=range]{width:100%;accent-color:#9C5D0E;margin:16px 0 4px;}
 
 <div id="topbar">
   <div class="hud">
-    <div class="hud-card"><small>Fälle gelöst</small><strong id="cases">0 <span>/ 8</span></strong></div>
+    <div class="hud-card main"><small>Fälle gelöst</small><strong id="cases">0 <span>/ 8</span></strong></div>
     <div class="hud-card"><small>Dauerlast stillgelegt</small><strong id="kw">0.0 <span>kW</span></strong><div class="hud-sub" id="chf">≈ CHF 0/Jahr</div></div>
     <div class="hud-card"><small>Indizien</small><strong id="clues">0 <span>/ 6</span></strong></div>
   </div>
 </div>
 <div id="brand">Energie-Detektei Luzern</div>
 <div id="gps-pill"><span id="gps-dot"></span><span id="gps-txt">GPS aus</span></div>
-<button id="soundbtn">🔇 Ton aus</button>
-<button id="musicbtn">🎷 Musik aus</button>
-<button id="aktenbtn">📁 FALLAKTEN</button>
-<button id="boardbtn">📌 BOARD</button>
-<button id="hazbtn">👻 Störenfriede an</button>
+
+<div id="toolbar">
+  <button class="tb" id="aktenbtn"><svg viewBox="0 0 24 24"><path d="M3.5 7 V18.5 H20.5 V9.5 H12.5 L10.5 7 Z"/></svg><span>AKTEN</span></button>
+  <button class="tb" id="boardbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4.2"/><line x1="12" y1="12.2" x2="12" y2="20"/></svg><span>BOARD</span></button>
+  <button class="tb" id="soundbtn"><svg viewBox="0 0 24 24"><path d="M6.5 15.5 V11 a5.5 5.5 0 0 1 11 0 v4.5 l1.5 2.5 H5 Z"/><line x1="10.5" y1="21" x2="13.5" y2="21"/></svg><span>TON</span></button>
+  <button class="tb" id="musicbtn"><svg viewBox="0 0 24 24"><circle cx="8" cy="17" r="2.8"/><line x1="10.8" y1="17" x2="10.8" y2="5"/><path d="M10.8 5 L17.5 7.2 V11"/></svg><span>MUSIK</span></button>
+  <button class="tb" id="testbtn"><svg viewBox="0 0 24 24"><path d="M10 3.5 h4 M11.2 3.5 V9 l-5 8.5 a2 2 0 0 0 1.8 3 h8 a2 2 0 0 0 1.8-3 L12.8 9 V3.5"/></svg><span>TEST</span></button>
+</div>
 
 <div id="toast"><div class="t-head" id="toast-head">INDIZ ZU DEN AKTEN GELEGT</div><div class="t-body" id="toast-body"></div></div>
 
 <div id="testbar">
   <div id="test-stops"></div>
-  <button id="test-toggle">Test-Modus: Route simulieren</button>
 </div>
 
 <div class="stamp" id="stamp">Fall gelöst</div>
@@ -300,7 +309,7 @@ input[type=range]{width:100%;accent-color:#9C5D0E;margin:16px 0 4px;}
     <div class="step-tag">Dienstfoto (optional)</div>
     <input type="file" accept="image/*" capture="user" id="agent-cam" hidden>
     <img id="agent-thumb" alt="">
-    <button class="btn btn-dark" type="button" onclick="document.getElementById('agent-cam').click()">📷 DIENSTFOTO AUFNEHMEN</button>
+    <button class="btn btn-dark" type="button" onclick="document.getElementById('agent-cam').click()"><svg class="bi" viewBox="0 0 24 24"><rect x="3" y="7.5" width="18" height="12.5" rx="2"/><circle cx="12" cy="13.5" r="4"/><path d="M8.5 7.5 L10 5 h4 l1.5 2.5"/></svg>DIENSTFOTO AUFNEHMEN</button>
     <p class="agent-hint">Gesicht mittig ins Bild – den Detektivhut setzen wir Ihnen auf. Das Foto bleibt auf Ihrem Gerät.</p>
     <button class="btn btn-quest" onclick="closeBriefing()">ERMITTLUNG AUFNEHMEN</button>
     <p style="font-size:11px;color:var(--muted);margin-top:14px;">Prototyp: Die Beobachtungsfragen sind Platzhalter und werden vor dem Launch vor Ort verifiziert.</p>
@@ -517,7 +526,8 @@ function ding(){ if(!soundOn) return; ensureAC(); const t = AC.currentTime; tone
 function buzz(){ if(!soundOn) return; ensureAC(); const t = AC.currentTime; tone(120, t, .2, 'sawtooth', .06); }
 document.getElementById('soundbtn').addEventListener('click', function(){
   soundOn = !soundOn;
-  this.textContent = soundOn ? '🔔 Ton an' : '🔇 Ton aus';
+  this.classList.toggle('on', soundOn);
+  this.querySelector('span').textContent = soundOn ? 'TON AN' : 'TON';
   if(soundOn){ ensureAC(); ding(); }
 });
 
@@ -562,7 +572,8 @@ function startMusic(){
 function stopMusicLoop(){ if(musicTimer){ clearInterval(musicTimer); musicTimer = null; } }
 document.getElementById('musicbtn').addEventListener('click', function(){
   musicOn = !musicOn;
-  this.textContent = musicOn ? '🎷 Musik an' : '🎷 Musik aus';
+  this.classList.toggle('on', musicOn);
+  this.querySelector('span').textContent = musicOn ? 'MUSIK AN' : 'MUSIK';
   if(musicOn) startMusic(); else stopMusicLoop();
 });
 
@@ -776,7 +787,8 @@ const caseMarkers = CASES.map((s, i) => {
 });
 CLUES.forEach((c, i) => {
   const el = document.createElement('div');
-  el.className = 'clue-pin'; el.id = 'cpin' + i; el.textContent = '🔍';
+  el.className = 'clue-pin'; el.id = 'cpin' + i;
+  el.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.5"/><line x1="14.7" y1="14.7" x2="19.5" y2="19.5"/></svg>';
   new maplibregl.Marker({element:el, anchor:'center'}).setLngLat([c.lng, c.lat]).addTo(map);
 });
 const heroEl = document.createElement('div');
@@ -885,6 +897,25 @@ if('geolocation' in navigator){
 /* ---------- Test-Modus ---------- */
 let curP = 0, walkTimer = null;
 const stopsEl = document.getElementById('test-stops');
+const simBtn = document.createElement('button');
+simBtn.className = 'tp';
+simBtn.textContent = 'SIMULATION: AUS';
+simBtn.addEventListener('click', () => {
+  testMode = !testMode;
+  simBtn.textContent = 'SIMULATION: ' + (testMode ? 'AN' : 'AUS');
+  if(testMode){ setGpsPill(true, 'Simulation'); curP = 0; setUser(ROUTE_PATH[0][0], ROUTE_PATH[0][1], 10); }
+  else setGpsPill(true, 'GPS aktiv');
+});
+stopsEl.appendChild(simBtn);
+const hazT = document.createElement('button');
+hazT.className = 'tp';
+hazT.textContent = 'STÖRENFRIEDE: AN';
+hazT.addEventListener('click', () => {
+  hazardsOn = !hazardsOn;
+  hazT.textContent = 'STÖRENFRIEDE: ' + (hazardsOn ? 'AN' : 'AUS');
+  HAZARDS.forEach(h => h.el.style.display = hazardsOn ? '' : 'none');
+});
+stopsEl.appendChild(hazT);
 CASES.forEach((s, i) => {
   const b = document.createElement('button');
   b.className = 'tp' + (s.witness ? ' tw' : '');
@@ -893,11 +924,10 @@ CASES.forEach((s, i) => {
   b.addEventListener('click', () => walkRouteTo(i));
   stopsEl.appendChild(b);
 });
-document.getElementById('test-toggle').addEventListener('click', function(){
-  testMode = !testMode;
-  stopsEl.classList.toggle('show', testMode);
-  this.textContent = testMode ? 'Test-Modus beenden (echtes GPS)' : 'Test-Modus: Route simulieren';
-  if(testMode){ setGpsPill(true, 'Simulation'); curP = 0; setUser(ROUTE_PATH[0][0], ROUTE_PATH[0][1], 10); }
+document.getElementById('testbtn').addEventListener('click', function(){
+  const show = !stopsEl.classList.contains('show');
+  stopsEl.classList.toggle('show', show);
+  this.classList.toggle('on', show);
 });
 function walkRouteTo(caseIdx){
   if(walkTimer){ clearInterval(walkTimer); walkTimer = null; }
@@ -1024,11 +1054,7 @@ setInterval(() => {
     else if(dp > 70) h.warned = false;
   });
 }, 250);
-document.getElementById('hazbtn').addEventListener('click', function(){
-  hazardsOn = !hazardsOn;
-  this.textContent = hazardsOn ? '👻 Störenfriede an' : '👻 Störenfriede aus';
-  HAZARDS.forEach(h => h.el.style.display = hazardsOn ? '' : 'none');
-});
+
 
 /* ================= BRIEFING ================= */
 let agentName = 'Detektiv:in N.N.', agentPhoto = null, baselineGuess = null, homePick = null;
@@ -1314,7 +1340,7 @@ function renderStep(){
       <p style="font-size:14px;line-height:1.6;margin-bottom:6px;">Fotografieren Sie den Schauplatz für Ihre Akte. Das Bild bleibt auf Ihrem Gerät – es wandert nur in Ihren persönlichen Schlussbericht.</p>
       <div id="photo-slot">${s.photo ? `<img class="photo-thumb" src="${s.photo}">` : ''}</div>
       <input type="file" accept="image/*" capture="environment" id="cam" hidden>
-      <button class="btn btn-dark" onclick="document.getElementById('cam').click()">📷 ${s.photo ? 'Foto ersetzen' : 'Beweisfoto aufnehmen'}</button>
+      <button class="btn btn-dark" onclick="document.getElementById('cam').click()"><svg class="bi" viewBox="0 0 24 24"><rect x="3" y="7.5" width="18" height="12.5" rx="2"/><circle cx="12" cy="13.5" r="4"/><path d="M8.5 7.5 L10 5 h4 l1.5 2.5"/></svg>${s.photo ? 'Foto ersetzen' : 'Beweisfoto aufnehmen'}</button>
       <button class="btn ${s.photo ? 'btn-quest' : 'btn-ghost'}" onclick="nextStep()">${s.photo ? 'Weiter zur Ermittlung' : 'Ohne Foto fortfahren'}</button>`;
     cfBody.innerHTML = html; cfBody.scrollTop = 0;
     const cam = document.getElementById('cam');
@@ -1645,7 +1671,7 @@ function solveCase(){
     <div class="case-place">${s.place}${s.kw ? ' · ' + s.kw.toFixed(1) + ' kW Dauerlast stillgelegt' : ''}${s.chf ? ' · spart ≈ CHF ' + fmtCHF(s.chf) + '/Jahr' : ''}</div>
     ${s.photo ? `<img class="photo-thumb" src="${s.photo}">` : ''}
     <div class="protokoll"><b>Erkenntnis fürs Protokoll</b>${s.fact}</div>
-    <details class="home-box"><summary>🏠 UND BEI IHNEN ZU HAUSE?</summary><p>${s.home}</p></details>
+    <details class="home-box"><summary><svg class="bi" viewBox="0 0 24 24"><path d="M4 11.5 L12 4.5 l8 7"/><path d="M6 10.5 V19.5 h12 V10.5"/></svg>UND BEI IHNEN ZU HAUSE?</summary><p>${s.home}</p></details>
     <button class="btn btn-quest" onclick="afterCase()">${solved === CASES.length ? 'ZUR GEGENÜBERSTELLUNG' : 'WEITER ERMITTELN'}</button>`;
   refresh();
 }
@@ -1672,8 +1698,8 @@ function openAkten(){
       </div>`).join('') +
     `<div class="step-tag" style="margin-top:20px;">Notizbuch · Indizien</div>` +
     CLUES.map((c, i) => c.got
-      ? `<div class="notiz">🔍 ${c.txt}</div>`
-      : `<div class="notiz locked">❓ Indiz ${i+1} – noch nicht gefunden. Es liegt an der Route.</div>`).join('') +
+      ? `<div class="notiz">› ${c.txt}</div>`
+      : `<div class="notiz locked">— Indiz ${i+1} – noch nicht gefunden. Es liegt an der Route.</div>`).join('') +
     `<button class="btn btn-ghost" style="margin-top:18px;" onclick="resetGame()">ERMITTLUNG ZURÜCKSETZEN</button>`;
   document.getElementById('akten').classList.add('show');
 }
@@ -1766,7 +1792,7 @@ function showReport(){
     slot.appendChild(bc);
     const sh = document.createElement('button');
     sh.className = 'btn btn-quest';
-    sh.textContent = '📤 AUSWEIS PER WHATSAPP TEILEN';
+    sh.innerHTML = '<svg class="bi" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.6"/><circle cx="17.5" cy="5.5" r="2.6"/><circle cx="17.5" cy="18.5" r="2.6"/><line x1="8.3" y1="10.8" x2="15.2" y2="6.7"/><line x1="8.3" y1="13.2" x2="15.2" y2="17.3"/></svg>AUSWEIS PER WHATSAPP TEILEN';
     sh.addEventListener('click', () => shareBadge(bc));
     slot.appendChild(sh);
     const dl = document.createElement('a');
@@ -1777,7 +1803,7 @@ function showReport(){
     slot.appendChild(dl);
     const re = document.createElement('button');
     re.className = 'btn btn-ghost';
-    re.textContent = agentPhoto ? '📷 Dienstfoto ersetzen' : '📷 Dienstfoto nachreichen';
+    re.innerHTML = '<svg class=\"bi\" viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"7.5\" width=\"18\" height=\"12.5\" rx=\"2\"/><circle cx=\"12\" cy=\"13.5\" r=\"4\"/><path d=\"M8.5 7.5 L10 5 h4 l1.5 2.5\"/></svg>' + (agentPhoto ? 'Dienstfoto ersetzen' : 'Dienstfoto nachreichen');
     re.addEventListener('click', () => document.getElementById('badge-cam').click());
     slot.appendChild(re);
     document.getElementById('badge-cam').addEventListener('change', function(){
