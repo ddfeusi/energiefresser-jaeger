@@ -295,7 +295,7 @@ input[type=range]{width:100%;accent-color:#9C5D0E;margin:16px 0 4px;}
       <b>1.</b> Folgen Sie der gepunkteten Route zum nächsten Schauplatz (Ihr GPS zeigt die Distanz).<br>
       <b>2.</b> Vor Ort: Beantworten Sie die Beobachtungsfrage – nur wer wirklich hinschaut, kommt weiter.<br>
       <b>3.</b> Sichern Sie ein Beweisfoto (bleibt auf Ihrem Gerät) und lösen Sie den Fall.<br>
-      <b>4.</b> Unterwegs liegen Indizien 🔍 – sie wandern automatisch in Ihr Notizbuch.
+      <b>4.</b> Unterwegs liegen Indizien – sie wandern automatisch in Ihr Notizbuch.
     </p>
     <div class="step-tag">Ihre Einschätzung vorab</div>
     <p class="q" style="font-size:14px;">Wie viel mehr Energie braucht eine Gastroküche pro Quadratmeter als ein Bürogebäude?</p>
@@ -1256,7 +1256,7 @@ function tryOpen(i){
       <div class="case-title">${s.title}</div>
       <div class="case-place">${s.place} · noch ${d >= 1000 ? (d/1000).toFixed(1)+' km' : d+' m'} entfernt</div>
       <div class="case-brief">${s.brief}</div>
-      <p style="font-size:14px;color:var(--muted);line-height:1.6;">Die Akte öffnet sich erst am Schauplatz (unter ${UNLOCK_RADIUS} m). Folgen Sie der gepunkteten Route – und behalten Sie die Indizien 🔍 im Auge.</p>
+      <p style="font-size:14px;color:var(--muted);line-height:1.6;">Die Akte öffnet sich erst am Schauplatz (unter ${UNLOCK_RADIUS} m). Folgen Sie der gepunkteten Route – und behalten Sie die Indizien im Auge.</p>
       <button class="btn btn-dark" onclick="closeCase()">Verstanden</button>`;
     cf.classList.add('show');
     return;
