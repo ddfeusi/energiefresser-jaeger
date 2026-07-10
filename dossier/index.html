@@ -126,7 +126,8 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 #agent-thumb{display:none;width:110px;height:110px;object-fit:cover;border-radius:50%;border:3px solid var(--ink);box-shadow:2px 3px 6px rgba(43,38,32,.3);margin:4px auto 6px;}
 .agent-hint{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.5;}
 /* --- Verdachts-Board --- */
-#board .ps-body{background:#A87E52;background-image:radial-gradient(120% 120% at 50% 30%, rgba(0,0,0,0) 55%, rgba(43,38,32,.35) 100%);}
+#board .ps-body{background-color:#B98A5A;box-shadow:inset 0 0 60px rgba(43,38,32,.45);}
+#board .ps-body::after{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(120% 120% at 50% 30%, rgba(0,0,0,0) 55%, rgba(43,38,32,.3) 100%);}
 .board-wrap{position:relative;height:560px;max-width:520px;margin:0 auto;}
 .bthreads{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;}
 .bcard{position:absolute;width:31%;background:#FDFBF4;border:1.5px solid #8F7443;border-radius:2px;padding:4px 4px 2px;box-shadow:2px 3px 6px rgba(43,38,32,.4);z-index:2;}
@@ -872,7 +873,34 @@ const THREADS = [
  {a:'04', b:'06', l:'Wärme im Kreislauf statt zum Kamin raus'},
  {a:'08', b:'05', l:'effiziente Geräte entlasten das Netz'}
 ];
-document.getElementById('boardbtn').addEventListener('click', renderBoard);
+let corkTile = null;
+function makeCork(){ /* Kork: Grundton, Flecken in drei Brauntoenen, feine Poren */
+  const s = 260, c = document.createElement('canvas'); c.width = c.height = s;
+  const x = c.getContext('2d');
+  x.fillStyle = '#B98A5A'; x.fillRect(0, 0, s, s);
+  const tones = ['#A87A4C','#C79C6B','#96683E','#C2925F','#8A5F38'];
+  for(let i = 0; i < 240; i++){
+    x.fillStyle = tones[i % tones.length];
+    x.globalAlpha = .12 + Math.random() * .22;
+    x.beginPath();
+    x.ellipse(Math.random()*s, Math.random()*s, 2 + Math.random()*9, 1.5 + Math.random()*6, Math.random()*3.2, 0, 7);
+    x.fill();
+  }
+  x.globalAlpha = .3;
+  for(let i = 0; i < 500; i++){
+    x.fillStyle = Math.random() < .5 ? '#7A5230' : '#D8B183';
+    x.fillRect(Math.random()*s, Math.random()*s, 1.4, 1.4);
+  }
+  x.globalAlpha = 1;
+  return 'url(' + c.toDataURL() + ')';
+}
+document.getElementById('boardbtn').addEventListener('click', () => {
+  if(!corkTile){
+    corkTile = makeCork();
+    document.querySelector('#board .ps-body').style.backgroundImage = corkTile;
+  }
+  renderBoard();
+});
 function renderBoard(){
   const done = nr => CASES.find(c => c.nr === nr).done;
   let threads = '', labels = '', shown = 0;
