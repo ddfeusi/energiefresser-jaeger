@@ -111,6 +111,7 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 .opt:active{transform:translate(1px,1px);}
 .opt.right{background:#DDEFE7;border-color:var(--teal);}
 .opt.wrong{background:#F4DCD2;border-color:var(--red);}
+.opt.sel{border-color:var(--ink);background:#EFE6CE;}
 .fb{font-size:14px;min-height:20px;margin:4px 0 8px;font-family:var(--type);}
 .btn{display:block;width:100%;text-align:center;font-family:var(--type);font-size:13px;padding:14px;border-radius:3px;border:none;cursor:pointer;margin-top:12px;}
 .btn-dark{background:var(--ink);color:var(--paper);}
@@ -149,6 +150,7 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 @keyframes hazFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 .haz-schatten svg{animation:hazSway 4.2s ease-in-out infinite;}
 @keyframes hazSway{0%,100%{transform:rotate(-3deg) translateY(0)}50%{transform:rotate(3deg) translateY(-3px)}}
+.haz.haz-near svg{filter:drop-shadow(0 0 10px rgba(180,67,42,.95)) drop-shadow(0 3px 4px rgba(43,38,32,.3));}
 
 /* --- Aufgabentypen --- */
 input[type=range]{width:100%;accent-color:#9C5D0E;margin:16px 0 4px;}
@@ -164,6 +166,9 @@ input[type=range]{width:100%;accent-color:#9C5D0E;margin:16px 0 4px;}
 .sortrow .st{flex:1;font-size:13.5px;line-height:1.4;}
 .sortbtn{font-family:var(--type);font-size:9px;padding:7px 8px;border:1.5px solid var(--brown);background:transparent;border-radius:3px;cursor:pointer;color:var(--muted);}
 .sortbtn.sel{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+#pick-box{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:4px;}
+.pickbtn{font-family:var(--type);font-size:10px;line-height:1.35;padding:10px 8px;border:1.5px solid var(--brown);background:#FDFBF4;border-radius:3px;cursor:pointer;color:var(--ink);}
+.pickbtn.sel{background:var(--teal);color:#FDFBF4;border-color:var(--teal);}
 .ordcard{display:block;width:100%;text-align:left;background:#FDFBF4;border:1.5px solid var(--brown);border-radius:3px;padding:12px 38px 12px 14px;margin-bottom:8px;font-family:inherit;font-size:14px;line-height:1.4;cursor:pointer;position:relative;}
 .ordcard .on{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-family:var(--type);font-size:16px;color:var(--quest-dark);}
 .ordcard.sel{border-color:var(--ink);}
@@ -242,7 +247,7 @@ input[type=range]{width:100%;accent-color:#9C5D0E;margin:16px 0 4px;}
 <div id="topbar">
   <div class="hud">
     <div class="hud-card"><small>Fälle gelöst</small><strong id="cases">0 <span>/ 8</span></strong></div>
-    <div class="hud-card"><small>Sichergestellt</small><strong id="kw">0.0 <span>kW</span></strong><div class="hud-sub" id="chf">≈ CHF 0/Jahr</div></div>
+    <div class="hud-card"><small>Dauerlast stillgelegt</small><strong id="kw">0.0 <span>kW</span></strong><div class="hud-sub" id="chf">≈ CHF 0/Jahr</div></div>
     <div class="hud-card"><small>Indizien</small><strong id="clues">0 <span>/ 6</span></strong></div>
   </div>
 </div>
@@ -283,6 +288,13 @@ input[type=range]{width:100%;accent-color:#9C5D0E;margin:16px 0 4px;}
       <b>3.</b> Sichern Sie ein Beweisfoto (bleibt auf Ihrem Gerät) und lösen Sie den Fall.<br>
       <b>4.</b> Unterwegs liegen Indizien 🔍 – sie wandern automatisch in Ihr Notizbuch.
     </p>
+    <div class="step-tag">Ihre Einschätzung vorab</div>
+    <p class="q" style="font-size:14px;">Wie viel mehr Energie braucht eine Gastroküche pro Quadratmeter als ein Bürogebäude?</p>
+    <div id="base-opts">
+      <button class="opt" data-v="2">Etwa doppelt so viel</button>
+      <button class="opt" data-v="5">Rund fünfmal mehr</button>
+      <button class="opt" data-v="10">Rund zehnmal mehr</button>
+    </div>
     <div class="step-tag">Ihr Ermittler-Alias</div>
     <input id="agent-name" type="text" maxlength="24" placeholder="z.B. Inspektor Reuss" autocomplete="off">
     <div class="step-tag">Dienstfoto (optional)</div>
@@ -345,21 +357,21 @@ const CASES = [
  {nr:"01", title:"Das ewige Licht", witness:false, pathIdx:0, place:"Café am Bahnhofplatz", lat:47.0505, lng:8.3098, kw:1.4, chf:650,
   brief:"Zeugen berichten von zwölf Halogenlampen, die seit Jahren Tag und Nacht über der Theke glühen. Der Stromzähler dreht Überstunden.",
   obs:{q:"Beobachtung vor Ort: Wie viele Bögen hat das freistehende historische Bahnhofsportal auf dem Platz?",
-    opts:[{t:"Einen einzigen grossen Torbogen",ok:true},{t:"Drei Bögen nebeneinander",ok:false},{t:"Fünf kleine Bögen",ok:false}]},
+    opts:[{t:"Einen einzigen grossen Torbogen",ok:true},{t:"Drei Bögen nebeneinander",ok:false,w:"Zählen Sie nach – es ist EIN monumentaler Bogen, das letzte Stück des alten Bahnhofs von 1896."},{t:"Fünf kleine Bögen",ok:false,w:"Nicht ganz: ein einzelner, dafür monumentaler Torbogen."}]},
   task:{type:'lupe'},
   fact:"LED braucht rund 80 % weniger Strom als Halogen – kombiniert mit Sensorik sinkt der Verbrauch nochmals deutlich.",
   home:"Alte Halogenspots im Flur oder über dem Esstisch? Der Wechsel auf LED spart pro Lampe rund 80 % Strom – im Haushalt schnell über CHF 100 pro Jahr."},
  {nr:"02", title:"Die glühende Spur", witness:false, pathIdx:4, place:"Grossküche beim KKL", lat:47.0504, lng:8.3111, kw:5.5, chf:1100,
   brief:"In einer Grossküche glühen zwei Kochplatten auf höchster Stufe – doch der Herd ist verwaist. Die Wärmebildkamera glüht rot.",
   obs:{q:"Beobachtung vor Ort: Was macht das KKL schon von weitem unverkennbar?",
-    opts:[{t:"Das riesige, weit auskragende Flachdach",ok:true},{t:"Eine goldene Kuppel",ok:false},{t:"Ein hoher Uhrturm",ok:false}]},
+    opts:[{t:"Das riesige, weit auskragende Flachdach",ok:true},{t:"Eine gläserne Turmspitze",ok:false,w:"Kein Turm weit und breit – berühmt ist das flach auskragende Riesendach von Jean Nouvel."},{t:"Ein begrüntes Steildach",ok:false,w:"Steil ist hier nichts: Das KKL-Dach ragt flach und weit über den Europaplatz."}]},
   task:{type:'minigame'},
   fact:"Herdplatten im Leerlauf gehören zu den grössten Stromfressern in Grossküchen. Induktion heizt in Sekunden – Leerlauf wird unnötig.",
   home:"Der Küchen-Trick für daheim: Deckel auf die Pfanne (spart bis zu 30 %), Restwärme nutzen – und der Backofen braucht fürs meiste gar kein Vorheizen."},
  {nr:"03", title:"Die geretteten Menüs", witness:true, pathIdx:10, place:"Take-away am Schwanenplatz", lat:47.0524, lng:8.3083, kw:0.8, chf:2400,
   brief:"Ein Take-away gibt übrig gebliebene Menüs am Abend in Boxen mit, statt sie zu entsorgen. Ein möglicher Kronzeuge für die Detektei.",
   obs:{q:"Beobachtung vor Ort: Welche Tiere geben dem Schwanenplatz seinen Namen – und ziehen meist gleich nebenan ihre Runden?",
-    opts:[{t:"Schwäne",ok:true},{t:"Seelöwen",ok:false},{t:"Pfauen",ok:false}]},
+    opts:[{t:"Schwäne",ok:true},{t:"Möwen",ok:false,w:"Möwen kreisen hier viele – aber namensgebend sind die Schwäne am Quai."},{t:"Enten",ok:false,w:"Enten schwimmen mit – der Platz gehört aber den Schwänen."}]},
   task:{type:'sort', q:"Sortieren Sie die Beweisstücke: Was rettet Essen – was verschwendet es?",
     catA:"Rettet", catB:"Verschwendet", items:[
      {t:"Restli-Box für Gäste am Abend", cat:'A'},
@@ -371,7 +383,7 @@ const CASES = [
  {nr:"04", title:"Der nächtliche Luftzug", witness:false, pathIdx:12, place:"Hotelküche am Grendel", lat:47.0526, lng:8.3072, kw:2.8, chf:1300,
   brief:"Lange nach Küchenschluss rauscht eine Abluftanlage auf Stufe 5 in die Nacht. Der Täter bläst warme Luft – und Geld – zum Kamin hinaus.",
   obs:{q:"Beobachtung vor Ort: Der Grendel ist für den Verkehr ...?",
-    opts:[{t:"Eine reine Fussgängerzone",ok:true},{t:"Eine vierspurige Hauptstrasse",ok:false},{t:"Eine Tramlinie",ok:false}]},
+    opts:[{t:"Eine reine Fussgängerzone",ok:true},{t:"Eine Einbahnstrasse für Autos",ok:false,w:"Hier fährt gar nichts – der Grendel ist reine Fussgängerzone."},{t:"Eine Velostrasse",ok:false,w:"Auch Velos werden geschoben: reine Fussgängerzone."}]},
   task:{type:'slider', q:"Ihre Einschätzung: Wie viel Ventilationsstrom spart eine bedarfsgesteuerte Lüftung gegenüber Dauervollgas?",
     unit:"%", min:0, max:100, start:15, answer:50, tol:15,
     reveal:"Bis zu 50 % – nachts und in Nebenzeiten läuft die Anlage sonst schlicht umsonst."},
@@ -380,7 +392,7 @@ const CASES = [
  {nr:"05", title:"Die offene Tür", witness:false, pathIdx:14, place:"Restaurant am Rathausquai", lat:47.0520, lng:8.3068, kw:3.2, chf:800,
   brief:"Ein Getränkekühlschrank steht sperrangelweit offen – 'für den schnellen Zugriff', sagt das Personal. Die Kälte flieht, der Zähler rennt.",
   obs:{q:"Beobachtung vor Ort: Welches berühmte Bauwerk sehen Sie vom Rathausquai aus flussaufwärts über die Reuss?",
-    opts:[{t:"Die Kapellbrücke mit dem Wasserturm",ok:true},{t:"Die Spreuerbrücke",ok:false},{t:"Eine moderne Glasbrücke",ok:false}]},
+    opts:[{t:"Die Kapellbrücke mit dem Wasserturm",ok:true},{t:"Die Spreuerbrücke",ok:false,w:"Die liegt flussabwärts beim Mühlenplatz – flussaufwärts sehen Sie die Kapellbrücke mit dem achteckigen Wasserturm."},{t:"Die Seebrücke",ok:false,w:"Die Seebrücke liegt hinter Ihnen Richtung See – hier flussaufwärts steht die Kapellbrücke."}]},
   task:{type:'verhoer', q:"Verhör des Küchenpersonals. Eine Aussage ist falsch – welche?",
     statements:[
      {who:"Der Koch", t:"«Wenn der Kühlschrank direkt neben dem Ofen steht, braucht er deutlich mehr Strom.»", lie:false},
@@ -391,7 +403,7 @@ const CASES = [
  {nr:"06", title:"Die Kraft aus dem Wasser", witness:true, pathIdx:17, place:"Reussufer Unter der Egg", lat:47.0521, lng:8.3051, kw:2.2, chf:1500,
   brief:"Direkt vor der Altstadt fliesst ein riesiger Energiespeicher vorbei. Ein stiller Verbündeter – man muss ihn nur anzapfen.",
   obs:{q:"Beobachtung vor Ort: Die Promenade Unter der Egg verläuft unter ...?",
-    opts:[{t:"Historischen Arkadenbögen",ok:true},{t:"Einem modernen Glasdach",ok:false},{t:"Einer Stahlbrücke",ok:false}]},
+    opts:[{t:"Historischen Arkadenbögen",ok:true},{t:"Einem hölzernen Vordach",ok:false,w:"Holz gibt es hier höchstens an Marktständen – die Promenade führt unter steinernen Arkadenbögen durch."},{t:"Einer modernen Betonkonstruktion",ok:false,w:"Kein Beton: historische steinerne Arkadenbögen."}]},
   task:{type:'order', q:"Rekonstruieren Sie den Ablauf: Wie wird aus Seewasser Gebäudeenergie? Tippen Sie die Schritte in der richtigen Reihenfolge an.",
     steps:["Wasser wird in der Tiefe des Sees gefasst","Eine Wärmepumpe überträgt die Wärme bzw. Kälte ans Gebäude","Das Wasser fliesst kaum verändert in den See zurück"]},
   fact:"See und Reuss sind riesige Energiespeicher: Das KKL kühlt und heizt mit Wasser aus dem Vierwaldstättersee – emissionsarm und leise.",
@@ -399,7 +411,7 @@ const CASES = [
  {nr:"07", title:"Das Dach voller Sonne", witness:true, pathIdx:20, place:"Solardach am Weinmarkt", lat:47.0516, lng:8.3042, kw:1.6, chf:1200,
   brief:"Über den Gassen liegt ungenutztes Kapital: Dachflächen in bester Südlage. Ein Kronzeuge, der pünktlich zur Mittagszeit liefert.",
   obs:{q:"Beobachtung vor Ort: Was steht mitten auf dem historischen Weinmarkt?",
-    opts:[{t:"Ein kunstvoller alter Brunnen",ok:true},{t:"Eine Litfasssäule",ok:false},{t:"Ein Karussell",ok:false}]},
+    opts:[{t:"Ein kunstvoller alter Brunnen",ok:true},{t:"Eine Marienstatue",ok:false,w:"Fast – auf der Säule des Weinmarktbrunnens wacht eine Kriegerfigur."},{t:"Ein kleiner Pavillon",ok:false,w:"Kein Pavillon: In der Platzmitte steht der kunstvolle historische Brunnen."}]},
   task:{type:'slider', q:"Ihre Einschätzung: Wie viel Prozent seines Tagesertrags liefert ein Solardach in den Mittagsstunden (11–15 Uhr)?",
     unit:"%", min:0, max:100, start:15, answer:55, tol:15,
     reveal:"Gut die Hälfte – exakt dann, wenn die Küche auf Hochtouren läuft. Solar und Gastronomie sind ein Traumpaar."},
@@ -408,7 +420,7 @@ const CASES = [
  {nr:"08", title:"Die fleissige Maschine", witness:true, pathIdx:23, place:"Beizli am Mühlenplatz", lat:47.0523, lng:8.3032, kw:0, chf:0,
   brief:"Eine anonyme Meldung bezichtigt die Spülmaschine der Verschwendung. Doch Vorsicht: Nicht jeder Verdacht hält der Prüfung stand.",
   obs:{q:"Beobachtung vor Ort: Was sehen Sie vom Mühlenplatz aus in der Reuss?",
-    opts:[{t:"Das historische Nadelwehr",ok:true},{t:"Ein Hausboot",ok:false},{t:"Eine Schiffsschleuse",ok:false}]},
+    opts:[{t:"Das historische Nadelwehr",ok:true},{t:"Eine Schiffsschleuse",ok:false,w:"Keine Schleuse: Das Nadelwehr reguliert seit 1861 von Hand den Seepegel – Holznadel für Holznadel."},{t:"Ein kleines Flusskraftwerk",ok:false,w:"Das Kraftwerk liegt weiter unten – hier sehen Sie das historische Nadelwehr von 1861."}]},
   task:{type:'verhoer', q:"Die Gegenüberstellung: Eine Aussage über die Spülmaschine ist falsch – welche?",
     statements:[
      {who:"Der Wirt", t:"«Von Hand spülen wäre sparsamer als diese Maschine.»", lie:true},
@@ -442,6 +454,48 @@ const CLUES = [
 let kwSecured = 0, chfSecured = 0, solved = 0, clueCount = 0, errors = 0;
 let quizDone = false, quizRight = 0, quizIdx = 0;
 const fmtCHF = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+function saveState(){
+  try{ localStorage.setItem('ed-luzern-v1', JSON.stringify({
+    done:CASES.filter(c => c.done).map(c => c.nr), kw:kwSecured, chf:chfSecured,
+    clues:CLUES.map((c, i) => c.got ? i : -1).filter(i => i >= 0),
+    errors, quizDone, quizRight, agent:agentName, base:baselineGuess, pick:homePick })); }catch(e){}
+}
+function resetGame(){
+  if(confirm('Gesamten Spielstand löschen und neu beginnen?')){
+    try{ localStorage.removeItem('ed-luzern-v1'); }catch(e){}
+    location.reload();
+  }
+}
+function loadState(){
+  let d = null;
+  try{ d = JSON.parse(localStorage.getItem('ed-luzern-v1')); }catch(e){}
+  if(!d || !d.done || !d.done.length) return;
+  agentName = d.agent || agentName;
+  baselineGuess = (d.base !== undefined ? d.base : null);
+  homePick = d.pick || null;
+  errors = d.errors || 0; quizDone = !!d.quizDone; quizRight = d.quizRight || 0;
+  kwSecured = d.kw || 0; chfSecured = d.chf || 0;
+  d.done.forEach(nr => { const c = CASES.find(x => x.nr === nr); if(c && !c.done){ c.done = true; solved++; } });
+  (d.clues || []).forEach(i => {
+    if(CLUES[i] && !CLUES[i].got){
+      CLUES[i].got = true; clueCount++;
+      const p = document.getElementById('cpin' + i);
+      if(p){ p.classList.add('got'); p.textContent = '✓'; }
+    }
+  });
+  CASES.forEach((c, i) => {
+    if(c.done){
+      document.getElementById('pin' + i).className = 'case-pin done' + (c.witness ? ' witness' : '');
+      document.getElementById('lab' + i).textContent = 'GELÖST';
+    }
+  });
+  document.getElementById('cases').innerHTML = solved + ' <span>/ 8</span>';
+  document.getElementById('kw').innerHTML = kwSecured.toFixed(1) + ' <span>kW</span>';
+  document.getElementById('chf').textContent = '≈ CHF ' + fmtCHF(chfSecured) + '/Jahr';
+  document.getElementById('clues').innerHTML = clueCount + ' <span>/ ' + CLUES.length + '</span>';
+  document.getElementById('briefing').classList.remove('show');
+  setTimeout(() => hazToast('ERMITTLUNG FORTGESETZT', 'Ihr Spielstand wurde geladen. Hinweis: Beweisfotos werden aus Datenschutzgründen nicht gespeichert.'), 800);
+}
 let userPos = null, testMode = false, activeIdx = null, step = 0;
 
 /* ================= TON (dezent, kein Loop) ================= */
@@ -796,6 +850,7 @@ function collectClue(i){
   toast.classList.add('show');
   clearTimeout(toast._t);
   toast._t = setTimeout(() => toast.classList.remove('show'), 6000);
+  saveState();
 }
 let lastLng = null, walkStopT = null;
 function setUser(lat, lng, acc){
@@ -932,6 +987,12 @@ function hazToast(head, body){
   clearTimeout(toast._t);
   toast._t = setTimeout(() => toast.classList.remove('show'), 6500);
 }
+function hazWarn(h){ /* Annaeherungswarnung: Vibration, Ton, Aufleuchten */
+  if(navigator.vibrate) navigator.vibrate([90, 60, 90]);
+  if(soundOn){ ensureAC(); const t = AC.currentTime; tone(196, t, .22, 'sine', .07); tone(155, t + .24, .3, 'sine', .07); }
+  h.el.classList.add('haz-near');
+  setTimeout(() => h.el.classList.remove('haz-near'), 2600);
+}
 function hazHit(h){
   immuneUntil = Date.now() + 45000;
   const stolen = Math.min(0.5, kwSecured);
@@ -944,6 +1005,7 @@ function hazHit(h){
   const p = hazRandomPoint(userPos);
   h.lat = p.lat; h.lng = p.lng; h.tgt = hazRandomPoint();
   h.marker.setLngLat([h.lng, h.lat]);
+  saveState();
 }
 setInterval(() => {
   if(!hazardsOn) return;
@@ -955,7 +1017,11 @@ setInterval(() => {
     h.lat += (h.tgt.lat - h.lat) * f;
     h.lng += (h.tgt.lng - h.lng) * f;
     h.marker.setLngLat([h.lng, h.lat]);
-    if(!overlayOpen && userPos && Date.now() > immuneUntil && haversine(userPos, h) <= 25) hazHit(h);
+    if(overlayOpen || !userPos) return;
+    const dp = haversine(userPos, h);
+    if(dp <= 25 && Date.now() > immuneUntil) hazHit(h);
+    else if(dp <= 50 && !h.warned){ h.warned = true; hazWarn(h); }
+    else if(dp > 70) h.warned = false;
   });
 }, 250);
 document.getElementById('hazbtn').addEventListener('click', function(){
@@ -965,7 +1031,12 @@ document.getElementById('hazbtn').addEventListener('click', function(){
 });
 
 /* ================= BRIEFING ================= */
-let agentName = 'Detektiv:in N.N.', agentPhoto = null;
+let agentName = 'Detektiv:in N.N.', agentPhoto = null, baselineGuess = null, homePick = null;
+document.querySelectorAll('#base-opts .opt').forEach(b => b.addEventListener('click', () => {
+  baselineGuess = b.dataset.v;
+  document.querySelectorAll('#base-opts .opt').forEach(x => x.classList.toggle('sel', x === b));
+  saveState();
+}));
 const agentCam = document.getElementById('agent-cam');
 agentCam.addEventListener('change', () => {
   if(agentCam.files && agentCam.files[0]){
@@ -978,6 +1049,7 @@ agentCam.addEventListener('change', () => {
 function closeBriefing(){
   const v = (document.getElementById('agent-name').value || '').trim();
   if(v) agentName = v;
+  saveState();
   document.getElementById('briefing').classList.remove('show');
 }
 
@@ -1051,7 +1123,7 @@ function renderBoard(){
 function shareBadge(canvas){
   canvas.toBlob(async blob => {
     const file = new File([blob], 'dienstausweis-energie-detektei.jpg', {type:'image/jpeg'});
-    const text = 'Fall geschlossen! ' + agentName + ' · Rang: ' + rank() + ' · ' + kwSecured.toFixed(1) + ' kW & ≈ CHF ' + fmtCHF(chfSecured) + '/Jahr sichergestellt. 🔎 Übernimm auch du einen Auftrag: ' + location.href;
+    const text = 'Fall geschlossen! ' + agentName + ' · Rang: ' + rank() + ' · ' + kwSecured.toFixed(1) + ' kW Dauerlast stillgelegt & ≈ CHF ' + fmtCHF(chfSecured) + '/Jahr gespart. 🔎 Übernimm auch du einen Auftrag: ' + location.href;
     if(navigator.canShare && navigator.canShare({files:[file]})){
       try{ await navigator.share({files:[file], text:text, title:'Energie-Detektei Luzern'}); }catch(e){ /* abgebrochen */ }
     } else {
@@ -1087,10 +1159,14 @@ function buildBadge(done){
     x.fillText('Rang: ' + rank(), 400, 322);
     x.fillStyle = '#2B2620'; x.font = '26px "Special Elite", monospace';
     x.fillText('Fälle gelöst: 8/8  ·  Indizien: ' + clueCount + '/' + CLUES.length, 400, 386);
-    x.fillText(kwSecured.toFixed(1) + ' kW sichergestellt', 400, 428);
+    x.fillText(kwSecured.toFixed(1) + ' kW Dauerlast stillgelegt', 400, 428);
     x.fillText('≈ CHF ' + fmtCHF(chfSecured) + ' pro Jahr gespart', 400, 470);
     x.font = '22px "Special Elite", monospace'; x.fillStyle = '#7A6E58';
     x.fillText('Gültig für sämtliche Küchen der Stadt Luzern', 400, 530);
+    if(homePick){
+      x.fillStyle = '#0F6E56'; x.font = '24px "Special Elite", monospace';
+      x.fillText('Auftrag: ' + homePick, 400, 568);
+    }
     x.save();
     x.translate(880, 560); x.rotate(-0.12);
     x.strokeStyle = '#8E2F1E'; x.lineWidth = 5; x.strokeRect(-120, -34, 240, 62);
@@ -1265,7 +1341,7 @@ function answer(o, btn){ /* nur noch Beobachtungsfragen (Schritt 1) */
     btn.disabled = true;
     buzz();
     fb.style.color = 'var(--red)';
-    fb.textContent = 'Dieser Hinweis führt ins Leere. Schauen Sie genauer hin...';
+    fb.textContent = o.w || 'Dieser Hinweis führt ins Leere. Schauen Sie genauer hin...';
     return;
   }
   btn.classList.add('right');
@@ -1563,9 +1639,10 @@ function solveCase(){
     thud();
     setTimeout(() => st.classList.remove('slam'), 1900);
   }
+  saveState();
   cfBody.innerHTML = `<div class="case-nr">Fall Nr. ${s.nr} · abgeschlossen</div>
     <div class="case-title">${s.title}</div>
-    <div class="case-place">${s.place}${s.kw ? ' · ' + s.kw.toFixed(1) + ' kW sichergestellt' : ''}${s.chf ? ' · spart ≈ CHF ' + fmtCHF(s.chf) + '/Jahr' : ''}</div>
+    <div class="case-place">${s.place}${s.kw ? ' · ' + s.kw.toFixed(1) + ' kW Dauerlast stillgelegt' : ''}${s.chf ? ' · spart ≈ CHF ' + fmtCHF(s.chf) + '/Jahr' : ''}</div>
     ${s.photo ? `<img class="photo-thumb" src="${s.photo}">` : ''}
     <div class="protokoll"><b>Erkenntnis fürs Protokoll</b>${s.fact}</div>
     <details class="home-box"><summary>🏠 UND BEI IHNEN ZU HAUSE?</summary><p>${s.home}</p></details>
@@ -1596,7 +1673,8 @@ function openAkten(){
     `<div class="step-tag" style="margin-top:20px;">Notizbuch · Indizien</div>` +
     CLUES.map((c, i) => c.got
       ? `<div class="notiz">🔍 ${c.txt}</div>`
-      : `<div class="notiz locked">❓ Indiz ${i+1} – noch nicht gefunden. Es liegt an der Route.</div>`).join('');
+      : `<div class="notiz locked">❓ Indiz ${i+1} – noch nicht gefunden. Es liegt an der Route.</div>`).join('') +
+    `<button class="btn btn-ghost" style="margin-top:18px;" onclick="resetGame()">ERMITTLUNG ZURÜCKSETZEN</button>`;
   document.getElementById('akten').classList.add('show');
 }
 
@@ -1635,7 +1713,7 @@ function renderQuiz(){
       setTimeout(() => {
         quizIdx++;
         if(quizIdx < QUIZ.length) renderQuiz();
-        else { quizDone = true; showReport(); }
+        else { quizDone = true; saveState(); showReport(); }
       }, 1100);
     });
     box.appendChild(b);
@@ -1649,7 +1727,7 @@ function showReport(){
     <div class="case-nr">Auftrag Nr. 2026-LU · abgeschlossen</div>
     <div class="case-title" style="font-size:26px;">Die verschwundenen Kilowatt – Fall geschlossen</div>
     <div class="case-brief">
-      Alle acht Akten sind vom Tisch: vier Täter überführt, vier Kronzeugen gewonnen, <b>${kwSecured.toFixed(1)} kW sichergestellt</b> – zusammen rund <b>CHF ${fmtCHF(chfSecured)} pro Jahr</b>.
+      Alle acht Akten sind vom Tisch: vier Täter überführt, vier Kronzeugen gewonnen, <b>${kwSecured.toFixed(1)} kW Dauerlast stillgelegt</b> – zusammen rund <b>CHF ${fmtCHF(chfSecured)} pro Jahr</b>.
       Und die überraschende Wahrheit dieses Falls: Der grösste Täter war nie ein Gerät. Es war die <b>Gewohnheit</b> –
       das Licht, das niemand löscht. Die Tür, die niemand schliesst. Der Herd, den niemand hinterfragt.
       Gute Nachricht, Detektiv:in: Gewohnheiten kann man überführen. Jeden Tag.
@@ -1658,12 +1736,29 @@ function showReport(){
       Fälle gelöst: 8/8 · Indizien: ${clueCount}/${CLUES.length} · Gegenüberstellung: ${quizRight}/3 · Ermittlungsfehler: ${errors}<br>
       Verliehener Rang: <b style="display:inline;font-size:14px;">${rank()}</b>
     </div>
+    <div class="protokoll"><b>Ihr Lernsprung</b>${baselineGuess === null
+      ? 'Vorab-Schätzung übersprungen. Die Antwort: Gastroküchen brauchen rund fünfmal mehr Energie pro m² als Büros.'
+      : (baselineGuess === '5'
+        ? 'Ihre Vorab-Schätzung (5×) war korrekt – starker Ermittlerinstinkt.'
+        : 'Sie tippten vorab auf ' + baselineGuess + '× – tatsächlich sind es rund 5×. Genau dieser Sprung ist Ihr Lerngewinn.')}</div>
+    <div class="step-tag">Ihr erster Fall zuhause</div>
+    <p style="font-size:13.5px;line-height:1.5;margin-bottom:8px;">Wählen Sie einen Auftrag – er wird auf Ihrem Dienstausweis vermerkt:</p>
+    <div id="pick-box"></div>
     <div id="badge-slot"></div>
     <div id="collage-slot"></div>
     <a class="btn btn-quest" style="text-decoration:none;" target="_blank" rel="noopener"
-       href="https://wa.me/?text=${encodeURIComponent('Fall geschlossen! Ich habe für die Energie-Detektei Luzern alle 8 Fälle gelöst und ' + kwSecured.toFixed(1) + ' kW sichergestellt. 🔎 Übernimm auch du einen Auftrag:')}%20${encodeURIComponent(location.href)}">
+       href="https://wa.me/?text=${encodeURIComponent('Fall geschlossen! Ich habe für die Energie-Detektei Luzern alle 8 Fälle gelöst und ' + kwSecured.toFixed(1) + ' kW Dauerlast stillgelegt. 🔎 Übernimm auch du einen Auftrag:')}%20${encodeURIComponent(location.href)}">
        PER WHATSAPP MELDEN</a>
     <button class="btn btn-ghost" onclick="document.getElementById('report').classList.remove('show')">Zurück zur Karte</button>`;
+  const HOME_SHORT = {'01':'LED statt Halogen','02':'Deckel drauf beim Kochen','03':'Restli-Tag pro Woche','04':'Haube nur bei Bedarf','05':'Kühlschrank-Check','06':'Sparduschkopf montieren','07':'Balkon-Solar prüfen','08':'Voll & Eco spülen'};
+  const pb = document.getElementById('pick-box');
+  Object.keys(HOME_SHORT).forEach(nr => {
+    const b = document.createElement('button');
+    b.className = 'pickbtn' + (homePick === HOME_SHORT[nr] ? ' sel' : '');
+    b.textContent = HOME_SHORT[nr];
+    b.addEventListener('click', () => { homePick = HOME_SHORT[nr]; saveState(); showReport(); });
+    pb.appendChild(b);
+  });
   buildBadge(bc => {
     const slot = document.getElementById('badge-slot');
     slot.innerHTML = '<div class="step-tag">Ihr Dienstausweis</div><input type="file" accept="image/*" capture="user" id="badge-cam" hidden>';
@@ -1718,7 +1813,7 @@ function buildCollage(items, done){
   ctx.fillStyle = '#E8962E'; ctx.font = '38px "Special Elite", monospace';
   ctx.fillText('ENERGIE-DETEKTEI LUZERN', 40, 80);
   ctx.fillStyle = '#2B2620'; ctx.font = '30px "Special Elite", monospace';
-  ctx.fillText('Fall geschlossen · ' + kwSecured.toFixed(1) + ' kW sichergestellt', 40, 190);
+  ctx.fillText('Fall geschlossen · ' + kwSecured.toFixed(1) + ' kW Dauerlast stillgelegt', 40, 190);
   const cols = 2, cw = (W - 120) / cols, ch = 330;
   let loaded = 0;
   const max = Math.min(items.length, 6);
@@ -1744,6 +1839,7 @@ function buildCollage(items, done){
     img.src = it.url;
   });
 }
+loadState();
 refresh();
 </script>
 </body>
