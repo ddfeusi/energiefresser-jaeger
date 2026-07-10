@@ -48,6 +48,13 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 .case-pin svg{width:24px;height:24px;display:block;}
 .cp-chip{position:absolute;top:-10px;left:50%;transform:translateX(-50%) rotate(-4deg);font-family:var(--type);font-size:9px;line-height:1;padding:2px 6px;border-radius:2px;background:var(--red);color:#FDFBF4;box-shadow:1px 1px 0 rgba(43,38,32,.35);white-space:nowrap;}
 .case-pin.witness .cp-chip{background:var(--teal);}
+.cp-mini{display:none;font-family:var(--type);font-size:10px;line-height:1;}
+.case-wrap.mini .case-pin{width:24px;height:24px;border-width:2.5px;}
+.case-wrap.mini .case-pin svg{display:none;}
+.case-wrap.mini .cp-chip{display:none;}
+.case-wrap.mini .cp-mini{display:block;}
+.case-wrap.mini .case-pin.done::after{width:14px;height:14px;font-size:9px;right:-4px;top:-4px;}
+.start-tag{font-family:var(--type);font-size:9px;letter-spacing:.1em;background:var(--ink);color:var(--paper);padding:4px 9px;border-radius:2px;transform:rotate(-3deg);box-shadow:1px 2px 0 rgba(43,38,32,.35);pointer-events:none;}
 .case-pin.witness{border-color:var(--teal);border-style:double;border-width:4px;}
 .case-pin.near{background:var(--quest);animation:pulse 1.8s infinite;}
 .case-pin.witness.near{background:#DDEFE7;animation:pulseT 1.8s infinite;}
@@ -56,7 +63,8 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 .case-pin.far{opacity:.85;}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(232,150,46,.55)}70%{box-shadow:0 0 0 16px rgba(232,150,46,0)}100%{box-shadow:0 0 0 0 rgba(232,150,46,0)}}
 @keyframes pulseT{0%{box-shadow:0 0 0 0 rgba(15,110,86,.45)}70%{box-shadow:0 0 0 16px rgba(15,110,86,0)}100%{box-shadow:0 0 0 0 rgba(15,110,86,0)}}
-.dist-label{background:var(--ink);color:var(--paper);font-family:var(--type);font-size:9px;padding:3px 8px;border-radius:2px;white-space:nowrap;}
+.dist-label{display:none;background:var(--ink);color:var(--paper);font-family:var(--type);font-size:9px;padding:3px 8px;border-radius:2px;white-space:nowrap;}
+.dist-label.show{display:block;}
 .clue-pin{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#FDFBF4;border:2px dashed var(--brown);font-size:12px;animation:clueBob 2.2s ease-in-out infinite;cursor:default;}
 .clue-pin svg{width:13px;height:13px;stroke:#6B5335;stroke-width:2.6;fill:none;stroke-linecap:round;}
 .clue-pin.got{border:2px solid var(--teal);background:#DDEFE7;animation:none;opacity:.7;font-size:12px;color:var(--teal);}
@@ -612,6 +620,10 @@ const grain = document.createElement('div'); grain.id = 'map-grain'; map.getCont
 const fogBlur = document.createElement('div'); fogBlur.id = 'fog-blur'; map.getContainer().appendChild(fogBlur);
 const zoneTag = document.createElement('div'); zoneTag.className = 'zone-tag'; zoneTag.textContent = 'EINSATZGEBIET';
 new maplibregl.Marker({element:zoneTag, anchor:'center'}).setLngLat([8.3080, 47.0582]).addTo(map);
+const startTag = document.createElement('div');
+startTag.className = 'start-tag';
+startTag.textContent = 'START';
+new maplibregl.Marker({element:startTag, anchor:'left', offset:[18, -4]}).setLngLat([ROUTE_PATH[0][1], ROUTE_PATH[0][0]]).addTo(map);
 const ZONE = [[8.2960,47.0475],[8.2985,47.0460],[8.3175,47.0460],[8.3200,47.0475],[8.3200,47.0565],[8.3175,47.0580],[8.2985,47.0580],[8.2960,47.0565],[8.2960,47.0475]];
 const blurSupported = (window.CSS && CSS.supports && (CSS.supports('clip-path', 'path(evenodd, "M0 0 H10 V10 H0 Z")') || CSS.supports('clip-path', "path('M0 0 H10 V10 H0 Z')")));
 function pointInZone(lng, lat){ /* Ray-Casting */
@@ -708,6 +720,26 @@ map.on('load', () => {
     layout:{'line-cap':'round', 'line-join':'round'},
     paint:{'line-pattern':'rope', 'line-width':5}});
   addPushpins();
+
+  /* Richtungspfeile: kleine Stiche auf der Schnur */
+  (function(){
+    const ac = document.createElement('canvas'); ac.width = ac.height = 20;
+    const g = ac.getContext('2d');
+    g.fillStyle = '#7E2415';
+    g.beginPath(); g.moveTo(5, 4); g.lineTo(16, 10); g.lineTo(5, 16); g.closePath(); g.fill();
+    map.addImage('thread-arrow', g.getImageData(0, 0, 20, 20));
+    map.addLayer({id:'route-arrows', type:'symbol', source:'route',
+      layout:{'symbol-placement':'line', 'symbol-spacing':64, 'icon-image':'thread-arrow', 'icon-size':.75,
+        'icon-allow-overlap':true, 'icon-ignore-placement':true, 'icon-rotation-alignment':'map'}});
+  })();
+
+  /* Sichtbare Gefahrenzonen der Störenfriede (25 m, im Kartenmassstab) */
+  map.addSource('hazzone', {type:'geojson', data:{type:'FeatureCollection', features:[]}});
+  map.addLayer({id:'hazzone', type:'circle', source:'hazzone', paint:{
+    'circle-color':'#B4432A', 'circle-opacity':.09,
+    'circle-stroke-color':'#B4432A', 'circle-stroke-width':1.5, 'circle-stroke-opacity':.3,
+    'circle-radius':hazRadiusPx()}});
+  map.on('zoom', () => { try{ map.setPaintProperty('hazzone', 'circle-radius', hazRadiusPx()); }catch(e){} });
 });
 
 /* ---------- Schnur & Stecknadeln ---------- */
@@ -781,7 +813,7 @@ const PIN_ICONS = {
 const caseMarkers = CASES.map((s, i) => {
   const el = document.createElement('div');
   el.className = 'case-wrap';
-  el.innerHTML = `<div class="case-pin far${s.witness ? ' witness' : ''}" id="pin${i}"><span class="cp-chip">${s.witness ? 'ZEUGE' : 'FALL'} ${s.nr}</span>${PIN_ICONS[s.nr]}</div><div class="dist-label" id="lab${i}">…</div>`;
+  el.innerHTML = `<div class="case-pin far${s.witness ? ' witness' : ''}" id="pin${i}"><span class="cp-chip">${s.witness ? 'ZEUGE' : 'FALL'} ${s.nr}</span><span class="cp-mini">${s.nr}</span>${PIN_ICONS[s.nr]}</div><div class="dist-label" id="lab${i}">…</div>`;
   el.addEventListener('click', () => tryOpen(i));
   return new maplibregl.Marker({element:el, anchor:'center'}).setLngLat([s.lng, s.lat]).addTo(map);
 });
@@ -827,6 +859,13 @@ heroEl.innerHTML = `<div class="hero-ring"></div>
 </svg>`;
 let heroMarker = null;
 
+function updatePinScale(){
+  const mini = map.getZoom() < 15.2;
+  document.querySelectorAll('.case-wrap').forEach(el => el.classList.toggle('mini', mini));
+}
+map.on('zoom', updatePinScale);
+updatePinScale();
+
 function haversine(a, b){
   const R = 6371000, r = d => d * Math.PI / 180;
   const dLat = r(b.lat - a.lat), dLng = r(b.lng - a.lng);
@@ -835,14 +874,22 @@ function haversine(a, b){
 }
 function refresh(){
   if(!userPos) return;
-  CASES.forEach((s, i) => {
+  let nearestIdx = -1, nearestD = Infinity;
+  const dists = CASES.map((s, i) => {
     const d = Math.round(haversine(userPos, s));
+    if(!s.done && d < nearestD){ nearestD = d; nearestIdx = i; }
+    return d;
+  });
+  CASES.forEach((s, i) => {
+    const d = dists[i];
     const pin = document.getElementById('pin' + i);
     const lab = document.getElementById('lab' + i);
     const w = s.witness ? ' witness' : '';
     if(s.done){ pin.className = 'case-pin done' + w; lab.textContent = 'GELÖST'; }
     else if(d <= UNLOCK_RADIUS){ pin.className = 'case-pin near' + w; lab.textContent = 'ERMITTELN!'; }
     else { pin.className = 'case-pin far' + w; lab.textContent = d >= 1000 ? (d/1000).toFixed(1) + ' km' : d + ' m'; }
+    /* Nur das nächste offene Ziel zeigt Distanz – Antippen liefert Details */
+    lab.classList.toggle('show', i === nearestIdx);
   });
   CLUES.forEach((c, i) => {
     if(c.got) return;
@@ -989,6 +1036,9 @@ const HAZ_TXT = {
    body:'Das Licht, das niemand löscht. Die Tür, die niemand schliesst. Bleiben Sie wachsam – Gewohnheit ist der stillste Täter. (45 s Schonfrist)'}
 };
 const HAZARDS = [{type:'geist'}, {type:'geist'}, {type:'schatten'}];
+function hazRadiusPx(){ /* 25 Meter in Pixel beim aktuellen Zoom */
+  return 25 / (156543.03392 * Math.cos(47.052 * Math.PI / 180) / Math.pow(2, map.getZoom()));
+}
 function hazRandomPoint(farFrom){
   for(let t = 0; t < 50; t++){
     const lng = 8.2985 + Math.random() * (8.3175 - 8.2985);
@@ -1038,7 +1088,10 @@ function hazHit(h){
   saveState();
 }
 setInterval(() => {
-  if(!hazardsOn) return;
+  if(!hazardsOn){
+    if(mapLoaded){ try{ map.getSource('hazzone').setData({type:'FeatureCollection', features:[]}); }catch(e){} }
+    return;
+  }
   const overlayOpen = !!document.querySelector('.paper-screen.show');
   HAZARDS.forEach(h => {
     const d = haversine(h, h.tgt);
@@ -1053,6 +1106,16 @@ setInterval(() => {
     else if(dp <= 50 && !h.warned){ h.warned = true; hazWarn(h); }
     else if(dp > 70) h.warned = false;
   });
+  /* Gefahrenzonen mitführen + sanft pulsieren lassen */
+  if(mapLoaded){
+    try{
+      map.getSource('hazzone').setData({type:'FeatureCollection',
+        features:HAZARDS.map(h => ({type:'Feature', properties:{}, geometry:{type:'Point', coordinates:[h.lng, h.lat]}}))});
+      const p = .5 + .5 * Math.sin(performance.now() / 500);
+      map.setPaintProperty('hazzone', 'circle-opacity', .05 + .07 * p);
+      map.setPaintProperty('hazzone', 'circle-stroke-opacity', .2 + .2 * p);
+    }catch(e){}
+  }
 }, 250);
 
 
