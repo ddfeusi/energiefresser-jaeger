@@ -170,6 +170,34 @@ input[type=range]{width:100%;accent-color:#9C5D0E;margin:16px 0 4px;}
 .notiz{background:#FDFBF4;border:1px dashed var(--brown);border-radius:3px;padding:10px 13px;font-size:13px;line-height:1.5;margin-bottom:8px;}
 .notiz.locked{color:var(--muted);}
 #collage{width:100%;border:4px solid #FDFBF4;box-shadow:3px 4px 12px rgba(43,38,32,.35);margin:14px 0;}
+/* --- Aktendeckel --- */
+.folder{position:relative;background:#D9BE8C;border:1.5px solid #8F7443;border-radius:4px 12px 12px 4px;padding:54px 20px 20px;min-height:340px;transform-origin:left center;box-shadow:3px 4px 0 rgba(43,38,32,.2);margin-top:10px;}
+.folder::before{content:'';position:absolute;top:-13px;left:16px;width:118px;height:15px;background:#D9BE8C;border:1.5px solid #8F7443;border-bottom:none;border-radius:6px 6px 0 0;}
+.folder.opening{animation:folderOpen .6s ease forwards;}
+@keyframes folderOpen{100%{transform:perspective(900px) rotateY(-92deg);opacity:0;}}
+.f-agency{font-family:var(--type);font-size:10px;letter-spacing:.1em;color:#6B5335;}
+.f-nr{font-family:var(--type);font-size:27px;margin:12px 0 4px;}
+.f-title{font-family:var(--type);font-size:14px;margin-bottom:3px;}
+.f-place{font-size:13px;color:#6B5335;margin-bottom:78px;}
+.f-conf{position:absolute;top:46px;right:16px;font-family:var(--type);font-size:11px;letter-spacing:.1em;color:var(--red);border:2.5px solid var(--red);padding:5px 10px;transform:rotate(8deg);}
+.f-seal{position:absolute;right:28px;bottom:100px;width:34px;height:34px;}
+.f-seal::before{content:'';position:absolute;inset:0;border-radius:50%;background:#8E2F1E;box-shadow:0 0 0 3px #D9BE8C, 0 0 0 5px #8E2F1E;}
+.f-seal span{position:absolute;left:-42px;top:15px;width:76px;border-top:2.5px solid #8E2F1E;transform:rotate(-18deg);}
+/* --- Tatort-Skizze --- */
+.scene-wrap{border:1.5px solid var(--brown);border-radius:3px;overflow:hidden;margin:6px 0 14px;background:#F3E9CF;position:relative;}
+.scene-wrap svg{display:block;width:100%;height:auto;}
+.scene-cap{position:absolute;left:8px;bottom:6px;font-family:var(--type);font-size:8px;letter-spacing:.06em;color:#FDFBF4;background:rgba(43,38,32,.75);padding:2px 7px;border-radius:2px;}
+/* --- Unterschrift (Kronzeugen) --- */
+#sign{position:fixed;left:50%;top:38%;z-index:4000;transform:translate(-50%,-50%);display:none;pointer-events:none;}
+#sign.show{display:block;animation:signPop .35s cubic-bezier(.2,1.4,.4,1);}
+.sign-card{background:#FDFBF4;border:3px solid var(--teal);border-radius:4px;padding:14px 18px 10px;box-shadow:4px 4px 0 rgba(43,38,32,.3);transform:rotate(-3deg);text-align:center;}
+.sign-top{font-family:var(--type);font-size:9px;letter-spacing:.08em;color:var(--teal);display:block;}
+.sign-bot{font-family:var(--type);font-size:9px;color:var(--muted);display:block;margin-top:2px;}
+.sign-card svg{width:200px;height:54px;display:block;margin:0 auto;}
+#sig-path{stroke-dasharray:520;stroke-dashoffset:520;}
+#sign.show #sig-path{animation:sigDraw 1.15s .2s ease forwards;}
+@keyframes sigDraw{to{stroke-dashoffset:0;}}
+@keyframes signPop{0%{transform:translate(-50%,-50%) scale(.6);opacity:0}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
 @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important;}}
 </style>
 </head>
@@ -198,6 +226,8 @@ input[type=range]{width:100%;accent-color:#9C5D0E;margin:16px 0 4px;}
 </div>
 
 <div class="stamp" id="stamp">Fall gelöst</div>
+
+<div id="sign"><div class="sign-card"><span class="sign-top">KOOPERATIONSVEREINBARUNG</span><svg viewBox="0 0 220 60"><path id="sig-path" d="M12 40 C 30 8, 42 56, 62 32 S 92 14, 106 38 S 140 56 152 30 S 186 18 208 34" fill="none" stroke="#1D3F8F" stroke-width="3" stroke-linecap="round"/></svg><span class="sign-bot">unterzeichnet · Kronzeuge gewonnen</span></div></div>
 
 <!-- ============ BRIEFING ============ -->
 <div class="paper-screen show" id="briefing">
@@ -325,6 +355,18 @@ const CASES = [
      {who:"Der Abwart", t:"«Moderne Geräte brauchen weniger Wasser als der Abwasch im Becken.»", lie:false}]},
   fact:"Eine voll beladene, moderne Spülmaschine ist effizienter als Abwaschen von Hand. Effiziente Geräte sind Verbündete, keine Täter."}
 ];
+
+/* ---------- Tatort-Skizzen ---------- */
+const SCENES = {
+ '01': `<svg viewBox="0 0 360 140"><rect width="360" height="140" fill="#2E2A22"/><circle cx="322" cy="26" r="12" fill="#F3E9CF" opacity=".9"/><circle cx="317" cy="23" r="10" fill="#2E2A22"/><rect x="52" y="34" width="256" height="106" fill="#453C2F"/><rect x="52" y="34" width="256" height="12" fill="#8E2F1E"/><g fill="#FFCF4D"><rect x="76" y="60" width="44" height="34"/><rect x="158" y="60" width="44" height="34"/><rect x="240" y="60" width="44" height="34"/></g><g fill="#FFCF4D" opacity=".16"><circle cx="98" cy="77" r="34"/><circle cx="180" cy="77" r="34"/><circle cx="262" cy="77" r="34"/></g><rect x="160" y="104" width="40" height="36" fill="#2B2620"/><text x="60" y="26" font-family="Special Elite, monospace" font-size="11" fill="#B8AB8E">CAFÉ · 23:40 UHR · ALLES BRENNT</text></svg>`,
+ '02': `<svg viewBox="0 0 360 140"><rect width="360" height="140" fill="#332E26"/><rect y="86" width="360" height="54" fill="#4A4238"/><rect x="70" y="76" width="220" height="14" rx="3" fill="#57503F"/><circle cx="130" cy="83" r="17" fill="none" stroke="#FF6B35" stroke-width="6"/><circle cx="230" cy="83" r="17" fill="none" stroke="#FF6B35" stroke-width="6"/><g stroke="#FF9A5C" stroke-width="3" fill="none" opacity=".75"><path d="M120 60 q4 -8 0 -16"/><path d="M132 58 q4 -8 0 -16"/><path d="M222 60 q4 -8 0 -16"/><path d="M234 58 q4 -8 0 -16"/></g><circle cx="318" cy="30" r="14" fill="#F3E9CF"/><line x1="318" y1="30" x2="318" y2="21" stroke="#2B2620" stroke-width="2"/><line x1="318" y1="30" x2="325" y2="33" stroke="#2B2620" stroke-width="2"/><text x="14" y="26" font-family="Special Elite, monospace" font-size="11" fill="#B8AB8E">GROSSKÜCHE · NIEMAND KOCHT</text></svg>`,
+ '03': `<svg viewBox="0 0 360 140"><rect width="360" height="140" fill="#F3E9CF"/><rect y="98" width="360" height="42" fill="#D9BE8C"/><path d="M140 58 L220 58 L212 38 L148 38 Z" fill="#E8CBA0" stroke="#2B2620" stroke-width="3"/><rect x="140" y="58" width="80" height="44" rx="7" fill="#D9B98A" stroke="#2B2620" stroke-width="3"/><path d="M182 38 Q179 20 196 15 Q197 32 186 38 Z" fill="#1D9E75" stroke="#2B2620" stroke-width="2.5"/><g stroke="#0F6E56" stroke-width="2.5" fill="none" opacity=".6"><path d="M120 92 q-5 -10 2 -20"/><path d="M242 90 q5 -10 -2 -20"/></g><circle cx="86" cy="82" r="16" fill="#FDFBF4" stroke="#2B2620" stroke-width="2.5"/><circle cx="278" cy="82" r="16" fill="#FDFBF4" stroke="#2B2620" stroke-width="2.5"/><text x="14" y="26" font-family="Special Elite, monospace" font-size="11" fill="#7A6E58">GERETTET STATT ENTSORGT</text></svg>`,
+ '04': `<svg viewBox="0 0 360 140"><rect width="360" height="140" fill="#2E2A22"/><circle cx="180" cy="72" r="34" fill="#4A4238" stroke="#23201B" stroke-width="4"/><g fill="#9DBFCB"><path d="M180 72 L180 44 Q196 52 192 70 Z"/><path d="M180 72 L208 72 Q200 88 182 84 Z"/><path d="M180 72 L180 100 Q164 92 168 74 Z"/><path d="M180 72 L152 72 Q160 56 178 60 Z"/></g><circle cx="180" cy="72" r="6" fill="#23201B"/><g stroke="#9DBFCB" stroke-width="2.5" fill="none" opacity=".55"><path d="M226 46 a52 52 0 0 1 0 52"/><path d="M238 38 a66 66 0 0 1 0 68"/></g><rect x="292" y="22" width="52" height="44" fill="#3A3427"/><circle cx="318" cy="42" r="10" fill="#F3E9CF" opacity=".9"/><text x="14" y="26" font-family="Special Elite, monospace" font-size="11" fill="#B8AB8E">STUFE 5 · LANGE NACH FEIERABEND</text></svg>`,
+ '05': `<svg viewBox="0 0 360 140"><rect width="360" height="140" fill="#332E26"/><rect x="96" y="18" width="90" height="116" rx="8" fill="#DDE7EA" stroke="#2B2620" stroke-width="3.5"/><rect x="104" y="26" width="74" height="100" fill="#BFE3F5" opacity=".9"/><rect x="112" y="40" width="58" height="6" fill="#FDFBF4"/><rect x="112" y="66" width="58" height="6" fill="#FDFBF4"/><path d="M186 20 L246 34 L246 128 L186 132 Z" fill="#CFDCE0" stroke="#2B2620" stroke-width="3.5"/><line x1="236" y1="60" x2="236" y2="92" stroke="#2B2620" stroke-width="4"/><g stroke="#8FD4EE" stroke-width="3.5" fill="none" opacity=".85"><path d="M196 60 q26 8 46 30"/><path d="M196 84 q24 12 40 34"/><path d="M196 40 q30 4 56 20"/></g><text x="14" y="26" font-family="Special Elite, monospace" font-size="11" fill="#B8AB8E">DIE KÄLTE FLIEHT</text></svg>`,
+ '06': `<svg viewBox="0 0 360 140"><rect width="360" height="140" fill="#F3E9CF"/><g fill="#E4D0A3" stroke="#2B2620" stroke-width="3"><path d="M30 96 L30 46 Q60 20 90 46 L90 96 Z"/><path d="M120 96 L120 46 Q150 20 180 46 L180 96 Z"/><path d="M210 96 L210 46 Q240 20 270 46 L270 96 Z"/></g><rect y="96" width="360" height="10" fill="#B99760"/><g stroke="#4FA8C8" stroke-width="3.5" fill="none"><path d="M12 118 q14 -9 28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0"/><path d="M0 130 q14 -9 28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0" opacity=".6"/></g><path d="M296 96 L296 60 L330 60" fill="none" stroke="#0F6E56" stroke-width="5"/><polygon points="330,52 344,60 330,68" fill="#0F6E56"/><text x="14" y="26" font-family="Special Elite, monospace" font-size="11" fill="#7A6E58">UNTER DER EGG · ENERGIE IM FLUSS</text></svg>`,
+ '07': `<svg viewBox="0 0 360 140"><rect width="360" height="140" fill="#DCEAF0"/><circle cx="304" cy="34" r="18" fill="#FFCF4D" stroke="#B9880F" stroke-width="3"/><g stroke="#E8962E" stroke-width="4" stroke-linecap="round"><line x1="304" y1="6" x2="304" y2="13"/><line x1="330" y1="16" x2="325" y2="21"/><line x1="333" y1="34" x2="326" y2="34"/></g><polygon points="40,96 180,30 320,96" fill="#8F7443" stroke="#2B2620" stroke-width="3"/><rect x="40" y="96" width="280" height="34" fill="#E4D0A3" stroke="#2B2620" stroke-width="3"/><g transform="translate(96,58) rotate(-25)"><rect width="70" height="34" rx="3" fill="#2F4A5C" stroke="#2B2620" stroke-width="3"/><line x1="23" y1="0" x2="23" y2="34" stroke="#8FB6D9" stroke-width="2.5"/><line x1="47" y1="0" x2="47" y2="34" stroke="#8FB6D9" stroke-width="2.5"/><line x1="0" y1="17" x2="70" y2="17" stroke="#8FB6D9" stroke-width="2.5"/></g><g transform="translate(186,58) rotate(25)"><rect width="70" height="34" rx="3" fill="#2F4A5C" stroke="#2B2620" stroke-width="3"/><line x1="23" y1="0" x2="23" y2="34" stroke="#8FB6D9" stroke-width="2.5"/><line x1="47" y1="0" x2="47" y2="34" stroke="#8FB6D9" stroke-width="2.5"/><line x1="0" y1="17" x2="70" y2="17" stroke="#8FB6D9" stroke-width="2.5"/></g><text x="14" y="26" font-family="Special Elite, monospace" font-size="11" fill="#5A6E78">MITTAGSSONNE = KOCHZEIT</text></svg>`,
+ '08': `<svg viewBox="0 0 360 140"><rect width="360" height="140" fill="#F3E9CF"/><rect x="118" y="26" width="124" height="108" rx="8" fill="#CFD6D2" stroke="#2B2620" stroke-width="3.5"/><rect x="126" y="34" width="108" height="16" rx="4" fill="#9AA6A0"/><circle cx="180" cy="94" r="30" fill="#8FD4EE" stroke="#2B2620" stroke-width="3.5"/><circle cx="170" cy="88" r="6" fill="#FDFBF4" opacity=".8"/><circle cx="190" cy="100" r="4" fill="#FDFBF4" opacity=".8"/><g fill="#FDFBF4" stroke="#8FD4EE" stroke-width="2"><circle cx="86" cy="50" r="8"/><circle cx="70" cy="76" r="5"/><circle cx="282" cy="58" r="7"/><circle cx="296" cy="86" r="4"/></g><g fill="#E8962E"><path d="M60 110 l4 8 8 4 -8 4 -4 8 -4 -8 -8 -4 8 -4 Z"/><path d="M300 112 l3 6 6 3 -6 3 -3 6 -3 -6 -6 -3 6 -3 Z"/></g><text x="14" y="26" font-family="Special Elite, monospace" font-size="11" fill="#7A6E58">DIE ZU UNRECHT VERDÄCHTIGTE</text></svg>`
+};
 
 const CLUES = [
  {lat:47.0504, lng:8.3105, txt:"Gastrobetriebe brauchen pro m² rund fünfmal mehr Energie als ein Bürogebäude."},
@@ -777,8 +819,55 @@ function tryOpen(i){
     return;
   }
   activeIdx = i; step = 0;
-  renderStep();
+  showCover(s);
   cf.classList.add('show');
+}
+function showCover(s){
+  document.getElementById('cf-head').textContent = 'FALLAKTE ' + s.nr;
+  cfBody.innerHTML = `<div class="folder" id="folder">
+    <div class="f-agency">ENERGIE-DETEKTEI LUZERN</div>
+    <div class="f-nr">FALLAKTE NR. ${s.nr}</div>
+    <div class="f-title">Betreff: „${s.title}"</div>
+    <div class="f-place">${s.place} · ${s.witness ? 'Kronzeuge' : 'Verdächtig'}</div>
+    <div class="f-conf">VERTRAULICH</div>
+    <div class="f-seal"><span></span></div>
+    <button class="btn btn-quest" id="f-open">AKTE ÖFFNEN</button>
+  </div>`;
+  cfBody.scrollTop = 0;
+  document.getElementById('f-open').addEventListener('click', () => {
+    rustle();
+    document.getElementById('folder').classList.add('opening');
+    setTimeout(renderStep, 580);
+  });
+}
+function rustle(){ /* Papierrascheln */
+  if(!soundOn) return; ensureAC();
+  const t0 = AC.currentTime;
+  [0, 0.1].forEach(d => {
+    const dur = .12, len = AC.sampleRate * dur, buf = AC.createBuffer(1, len, AC.sampleRate), dd = buf.getChannelData(0);
+    for(let i = 0; i < len; i++) dd[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 1.5);
+    const sn = AC.createBufferSource(); sn.buffer = buf;
+    const g = AC.createGain(); g.gain.value = .05;
+    sn.connect(g).connect(AC.destination); sn.start(t0 + d);
+  });
+}
+function scribble(){ /* Feder kratzt */
+  if(!soundOn) return; ensureAC();
+  const t0 = AC.currentTime;
+  [0, 0.18, 0.4, 0.62].forEach(d => {
+    const dur = .11, len = AC.sampleRate * dur, buf = AC.createBuffer(1, len, AC.sampleRate), dd = buf.getChannelData(0);
+    for(let i = 0; i < len; i++) dd[i] = (Math.random()*2-1) * (1 - i/len);
+    const sn = AC.createBufferSource(); sn.buffer = buf;
+    const g = AC.createGain(); g.gain.value = .035;
+    sn.connect(g).connect(AC.destination); sn.start(t0 + d);
+  });
+}
+function showSign(){
+  const el = document.getElementById('sign');
+  el.classList.remove('show'); void el.offsetWidth;
+  el.classList.add('show');
+  scribble();
+  setTimeout(() => el.classList.remove('show'), 2400);
 }
 function closeCase(){ cf.classList.remove('show'); }
 
@@ -789,7 +878,8 @@ function renderStep(){
     <div class="case-title">${s.title}</div>
     <div class="case-place">${s.place}</div>`;
   if(step === 0){
-    html += `<div class="case-brief">${s.brief}</div>
+    html += `<div class="scene-wrap">${SCENES[s.nr] || ''}<span class="scene-cap">TATORT-SKIZZE · AKTE ${s.nr}</span></div>
+      <div class="case-brief">${s.brief}</div>
       <div class="step-tag">Schritt 1 von 3 · Beweisaufnahme vor Ort</div>
       <div class="q">${s.obs.q}</div><div id="opts"></div><div class="fb" id="fb"></div>`;
     cfBody.innerHTML = html; cfBody.scrollTop = 0;
@@ -1118,14 +1208,18 @@ function solveCase(){
   kwSecured = Math.round((kwSecured + s.kw) * 10) / 10;
   document.getElementById('cases').innerHTML = solved + ' <span>/ 8</span>';
   document.getElementById('kw').innerHTML = kwSecured.toFixed(1) + ' <span>kW</span>';
-  /* Stempel! */
-  const st = document.getElementById('stamp');
-  st.textContent = s.witness ? 'Kronzeuge gewonnen' : 'Fall gelöst';
-  st.className = 'stamp' + (s.witness ? ' teal' : '');
-  void st.offsetWidth;
-  st.classList.add('slam');
-  thud();
-  setTimeout(() => st.classList.remove('slam'), 1900);
+  /* Abschluss-Zeremonie: Täter werden gestempelt, Kronzeugen unterschreiben */
+  if(s.witness){
+    showSign();
+  } else {
+    const st = document.getElementById('stamp');
+    st.textContent = 'Fall gelöst';
+    st.className = 'stamp';
+    void st.offsetWidth;
+    st.classList.add('slam');
+    thud();
+    setTimeout(() => st.classList.remove('slam'), 1900);
+  }
   cfBody.innerHTML = `<div class="case-nr">Fall Nr. ${s.nr} · abgeschlossen</div>
     <div class="case-title">${s.title}</div>
     <div class="case-place">${s.place}${s.kw ? ' · ' + s.kw.toFixed(1) + ' kW sichergestellt' : ''}</div>
