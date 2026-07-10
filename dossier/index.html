@@ -30,6 +30,7 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 .hud-card small{font-family:var(--type);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#C9BFA8;display:block;margin-bottom:3px;}
 .hud-card strong{font-size:18px;font-weight:700;line-height:1.1;}
 .hud-card strong span{font-size:12px;font-weight:500;color:#C9BFA8;}
+.hud-sub{font-family:var(--type);font-size:8.5px;color:#C9BFA8;margin-top:3px;letter-spacing:.03em;}
 #brand{position:absolute;top:78px;left:14px;z-index:1000;background:var(--quest);color:var(--ink);font-family:var(--type);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:7px 10px;border-radius:2px;box-shadow:2px 2px 0 rgba(43,38,32,.3);transform:rotate(-1deg);}
 #gps-pill{position:absolute;top:78px;right:14px;z-index:1000;background:#FDFBF4;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px;}
 #gps-dot{width:8px;height:8px;border-radius:50%;background:var(--red);}
@@ -115,6 +116,10 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 .photo-thumb{width:100%;max-height:220px;object-fit:cover;border:3px solid #FDFBF4;box-shadow:2px 3px 8px rgba(43,38,32,.3);transform:rotate(-1deg);margin:10px 0;}
 .protokoll{background:#FDFBF4;border:1px solid var(--line);padding:13px 15px;font-size:14px;line-height:1.55;margin-top:14px;}
 .protokoll b{font-family:var(--type);font-size:10px;letter-spacing:.08em;color:var(--quest-dark);display:block;margin-bottom:6px;}
+.home-box{background:#FDFBF4;border:1.5px dashed var(--teal);border-radius:3px;margin-top:10px;}
+.home-box summary{font-family:var(--type);font-size:11px;color:var(--teal);padding:11px 14px;cursor:pointer;list-style:none;}
+.home-box summary::-webkit-details-marker{display:none;}
+.home-box p{font-size:13.5px;line-height:1.55;padding:0 14px 12px;margin:0;}
 
 /* --- Aufgabentypen --- */
 input[type=range]{width:100%;accent-color:#9C5D0E;margin:16px 0 4px;}
@@ -208,7 +213,7 @@ input[type=range]{width:100%;accent-color:#9C5D0E;margin:16px 0 4px;}
 <div id="topbar">
   <div class="hud">
     <div class="hud-card"><small>Fälle gelöst</small><strong id="cases">0 <span>/ 8</span></strong></div>
-    <div class="hud-card"><small>kW gesichert</small><strong id="kw">0.0 <span>kW</span></strong></div>
+    <div class="hud-card"><small>Sichergestellt</small><strong id="kw">0.0 <span>kW</span></strong><div class="hud-sub" id="chf">≈ CHF 0/Jahr</div></div>
     <div class="hud-card"><small>Indizien</small><strong id="clues">0 <span>/ 6</span></strong></div>
   </div>
 </div>
@@ -288,19 +293,21 @@ const ROUTE_PATH = [
    witness:false = Verdächtige (überführen) · witness:true = Kronzeugen (gewinnen)
    PLATZHALTER: obs-Fragen vor dem Launch vor Ort verifizieren! */
 const CASES = [
- {nr:"01", title:"Das ewige Licht", witness:false, pathIdx:0, place:"Café am Bahnhofplatz", lat:47.0505, lng:8.3098, kw:1.4,
+ {nr:"01", title:"Das ewige Licht", witness:false, pathIdx:0, place:"Café am Bahnhofplatz", lat:47.0505, lng:8.3098, kw:1.4, chf:650,
   brief:"Zeugen berichten von zwölf Halogenlampen, die seit Jahren Tag und Nacht über der Theke glühen. Der Stromzähler dreht Überstunden.",
   obs:{q:"Beobachtung vor Ort: Wie viele Bögen hat das freistehende historische Bahnhofsportal auf dem Platz?",
     opts:[{t:"Einen einzigen grossen Torbogen",ok:true},{t:"Drei Bögen nebeneinander",ok:false},{t:"Fünf kleine Bögen",ok:false}]},
   task:{type:'lupe'},
-  fact:"LED braucht rund 80 % weniger Strom als Halogen – kombiniert mit Sensorik sinkt der Verbrauch nochmals deutlich."},
- {nr:"02", title:"Die glühende Spur", witness:false, pathIdx:2, place:"Grossküche beim KKL", lat:47.0504, lng:8.3111, kw:5.5,
+  fact:"LED braucht rund 80 % weniger Strom als Halogen – kombiniert mit Sensorik sinkt der Verbrauch nochmals deutlich.",
+  home:"Alte Halogenspots im Flur oder über dem Esstisch? Der Wechsel auf LED spart pro Lampe rund 80 % Strom – im Haushalt schnell über CHF 100 pro Jahr."},
+ {nr:"02", title:"Die glühende Spur", witness:false, pathIdx:2, place:"Grossküche beim KKL", lat:47.0504, lng:8.3111, kw:5.5, chf:1100,
   brief:"In einer Grossküche glühen zwei Kochplatten auf höchster Stufe – doch der Herd ist verwaist. Die Wärmebildkamera glüht rot.",
   obs:{q:"Beobachtung vor Ort: Was macht das KKL schon von weitem unverkennbar?",
     opts:[{t:"Das riesige, weit auskragende Flachdach",ok:true},{t:"Eine goldene Kuppel",ok:false},{t:"Ein hoher Uhrturm",ok:false}]},
   task:{type:'minigame'},
-  fact:"Herdplatten im Leerlauf gehören zu den grössten Stromfressern in Grossküchen. Induktion heizt in Sekunden – Leerlauf wird unnötig."},
- {nr:"03", title:"Die geretteten Menüs", witness:true, pathIdx:7, place:"Take-away am Schwanenplatz", lat:47.0524, lng:8.3083, kw:0.8,
+  fact:"Herdplatten im Leerlauf gehören zu den grössten Stromfressern in Grossküchen. Induktion heizt in Sekunden – Leerlauf wird unnötig.",
+  home:"Der Küchen-Trick für daheim: Deckel auf die Pfanne (spart bis zu 30 %), Restwärme nutzen – und der Backofen braucht fürs meiste gar kein Vorheizen."},
+ {nr:"03", title:"Die geretteten Menüs", witness:true, pathIdx:7, place:"Take-away am Schwanenplatz", lat:47.0524, lng:8.3083, kw:0.8, chf:2400,
   brief:"Ein Take-away gibt übrig gebliebene Menüs am Abend in Boxen mit, statt sie zu entsorgen. Ein möglicher Kronzeuge für die Detektei.",
   obs:{q:"Beobachtung vor Ort: Welche Tiere geben dem Schwanenplatz seinen Namen – und ziehen meist gleich nebenan ihre Runden?",
     opts:[{t:"Schwäne",ok:true},{t:"Seelöwen",ok:false},{t:"Pfauen",ok:false}]},
@@ -310,16 +317,18 @@ const CASES = [
      {t:"Tagesaktuelle Mengenplanung nach Wetter & Reservationen", cat:'A'},
      {t:"Riesenportionen als Standardgrösse", cat:'B'},
      {t:"Buffet bis zur letzten Minute randvoll nachgefüllt", cat:'B'}]},
-  fact:"Rund ein Viertel des Schweizer Food Waste entsteht in der Gastronomie. Restli-Boxen und clevere Planung sparen Essen, Geld und Energie."},
- {nr:"04", title:"Der nächtliche Luftzug", witness:false, pathIdx:9, place:"Hotelküche am Grendel", lat:47.0526, lng:8.3072, kw:2.8,
+  fact:"Rund ein Viertel des Schweizer Food Waste entsteht in der Gastronomie. Restli-Boxen und clevere Planung sparen Essen, Geld und Energie.",
+  home:"Reste-Tag einführen: ein fester Abend pro Woche für die 'Restli' der Woche. Das spart im Haushalt Hunderte Franken – und jede Menge graue Energie."},
+ {nr:"04", title:"Der nächtliche Luftzug", witness:false, pathIdx:9, place:"Hotelküche am Grendel", lat:47.0526, lng:8.3072, kw:2.8, chf:1300,
   brief:"Lange nach Küchenschluss rauscht eine Abluftanlage auf Stufe 5 in die Nacht. Der Täter bläst warme Luft – und Geld – zum Kamin hinaus.",
   obs:{q:"Beobachtung vor Ort: Der Grendel ist für den Verkehr ...?",
     opts:[{t:"Eine reine Fussgängerzone",ok:true},{t:"Eine vierspurige Hauptstrasse",ok:false},{t:"Eine Tramlinie",ok:false}]},
   task:{type:'slider', q:"Ihre Einschätzung: Wie viel Ventilationsstrom spart eine bedarfsgesteuerte Lüftung gegenüber Dauervollgas?",
     unit:"%", min:0, max:100, start:15, answer:50, tol:15,
     reveal:"Bis zu 50 % – nachts und in Nebenzeiten läuft die Anlage sonst schlicht umsonst."},
-  fact:"Bedarfsgeregelte Lüftungen sparen bis zu 50 % Ventilationsstrom – Wärmerückgewinnung nutzt die Abluft gleich doppelt."},
- {nr:"05", title:"Die offene Tür", witness:false, pathIdx:11, place:"Restaurant am Rathausquai", lat:47.0520, lng:8.3068, kw:3.2,
+  fact:"Bedarfsgeregelte Lüftungen sparen bis zu 50 % Ventilationsstrom – Wärmerückgewinnung nutzt die Abluft gleich doppelt.",
+  home:"Die Dunstabzugshaube muss nicht auf Stufe 3 durchlaufen: Beim Kochen bedarfsgerecht schalten, danach 5 Minuten nachlaufen lassen – das genügt."},
+ {nr:"05", title:"Die offene Tür", witness:false, pathIdx:11, place:"Restaurant am Rathausquai", lat:47.0520, lng:8.3068, kw:3.2, chf:800,
   brief:"Ein Getränkekühlschrank steht sperrangelweit offen – 'für den schnellen Zugriff', sagt das Personal. Die Kälte flieht, der Zähler rennt.",
   obs:{q:"Beobachtung vor Ort: Welches berühmte Bauwerk sehen Sie vom Rathausquai aus flussaufwärts über die Reuss?",
     opts:[{t:"Die Kapellbrücke mit dem Wasserturm",ok:true},{t:"Die Spreuerbrücke",ok:false},{t:"Eine moderne Glasbrücke",ok:false}]},
@@ -328,23 +337,26 @@ const CASES = [
      {who:"Der Koch", t:"«Wenn der Kühlschrank direkt neben dem Ofen steht, braucht er deutlich mehr Strom.»", lie:false},
      {who:"Die Servicefachfrau", t:"«Die offene Tür macht praktisch nichts aus – die Kälte bleibt ja im Gerät.»", lie:true},
      {who:"Der Lernende", t:"«Ein Selbstschliesser an der Tür kostet wenig und spart sofort.»", lie:false}]},
-  fact:"Ein offener Gastro-Kühlschrank braucht bis zu 30 % mehr Strom – und neben Wärmequellen nochmals deutlich mehr."},
- {nr:"06", title:"Die Kraft aus dem Wasser", witness:true, pathIdx:13, place:"Reussufer Unter der Egg", lat:47.0521, lng:8.3051, kw:2.2,
+  fact:"Ein offener Gastro-Kühlschrank braucht bis zu 30 % mehr Strom – und neben Wärmequellen nochmals deutlich mehr.",
+  home:"Kühlschrank-Check daheim: 7 °C reichen völlig, Dichtung mit dem Papiertest prüfen – und das Gerät bitte nicht neben Herd oder Heizung stellen."},
+ {nr:"06", title:"Die Kraft aus dem Wasser", witness:true, pathIdx:13, place:"Reussufer Unter der Egg", lat:47.0521, lng:8.3051, kw:2.2, chf:1500,
   brief:"Direkt vor der Altstadt fliesst ein riesiger Energiespeicher vorbei. Ein stiller Verbündeter – man muss ihn nur anzapfen.",
   obs:{q:"Beobachtung vor Ort: Die Promenade Unter der Egg verläuft unter ...?",
     opts:[{t:"Historischen Arkadenbögen",ok:true},{t:"Einem modernen Glasdach",ok:false},{t:"Einer Stahlbrücke",ok:false}]},
   task:{type:'order', q:"Rekonstruieren Sie den Ablauf: Wie wird aus Seewasser Gebäudeenergie? Tippen Sie die Schritte in der richtigen Reihenfolge an.",
     steps:["Wasser wird in der Tiefe des Sees gefasst","Eine Wärmepumpe überträgt die Wärme bzw. Kälte ans Gebäude","Das Wasser fliesst kaum verändert in den See zurück"]},
-  fact:"See und Reuss sind riesige Energiespeicher: Das KKL kühlt und heizt mit Wasser aus dem Vierwaldstättersee – emissionsarm und leise."},
- {nr:"07", title:"Das Dach voller Sonne", witness:true, pathIdx:14, place:"Solardach am Weinmarkt", lat:47.0516, lng:8.3042, kw:1.6,
+  fact:"See und Reuss sind riesige Energiespeicher: Das KKL kühlt und heizt mit Wasser aus dem Vierwaldstättersee – emissionsarm und leise.",
+  home:"Warmwasser ist im Haushalt der zweitgrösste Energieposten: Ein Sparduschkopf halbiert den Verbrauch – ganz ohne Komfortverlust."},
+ {nr:"07", title:"Das Dach voller Sonne", witness:true, pathIdx:14, place:"Solardach am Weinmarkt", lat:47.0516, lng:8.3042, kw:1.6, chf:1200,
   brief:"Über den Gassen liegt ungenutztes Kapital: Dachflächen in bester Südlage. Ein Kronzeuge, der pünktlich zur Mittagszeit liefert.",
   obs:{q:"Beobachtung vor Ort: Was steht mitten auf dem historischen Weinmarkt?",
     opts:[{t:"Ein kunstvoller alter Brunnen",ok:true},{t:"Eine Litfasssäule",ok:false},{t:"Ein Karussell",ok:false}]},
   task:{type:'slider', q:"Ihre Einschätzung: Wie viel Prozent seines Tagesertrags liefert ein Solardach in den Mittagsstunden (11–15 Uhr)?",
     unit:"%", min:0, max:100, start:15, answer:55, tol:15,
     reveal:"Gut die Hälfte – exakt dann, wenn die Küche auf Hochtouren läuft. Solar und Gastronomie sind ein Traumpaar."},
-  fact:"Solarstrom vom eigenen Dach passt perfekt zur Gastronomie: Die Produktionsspitze am Mittag trifft genau auf die Hauptkochzeit."},
- {nr:"08", title:"Die fleissige Maschine", witness:true, pathIdx:16, place:"Beizli am Mühlenplatz", lat:47.0523, lng:8.3032, kw:0,
+  fact:"Solarstrom vom eigenen Dach passt perfekt zur Gastronomie: Die Produktionsspitze am Mittag trifft genau auf die Hauptkochzeit.",
+  home:"Balkon-Solar gibt es ab wenigen hundert Franken: einstecken, Grundlast decken, fertig – auch für Mieter:innen."},
+ {nr:"08", title:"Die fleissige Maschine", witness:true, pathIdx:16, place:"Beizli am Mühlenplatz", lat:47.0523, lng:8.3032, kw:0, chf:0,
   brief:"Eine anonyme Meldung bezichtigt die Spülmaschine der Verschwendung. Doch Vorsicht: Nicht jeder Verdacht hält der Prüfung stand.",
   obs:{q:"Beobachtung vor Ort: Was sehen Sie vom Mühlenplatz aus in der Reuss?",
     opts:[{t:"Das historische Nadelwehr",ok:true},{t:"Ein Hausboot",ok:false},{t:"Eine Schiffsschleuse",ok:false}]},
@@ -353,7 +365,8 @@ const CASES = [
      {who:"Der Wirt", t:"«Von Hand spülen wäre sparsamer als diese Maschine.»", lie:true},
      {who:"Die Küchenchefin", t:"«Voll beladen ist die Maschine am effizientesten.»", lie:false},
      {who:"Der Abwart", t:"«Moderne Geräte brauchen weniger Wasser als der Abwasch im Becken.»", lie:false}]},
-  fact:"Eine voll beladene, moderne Spülmaschine ist effizienter als Abwaschen von Hand. Effiziente Geräte sind Verbündete, keine Täter."}
+  fact:"Eine voll beladene, moderne Spülmaschine ist effizienter als Abwaschen von Hand. Effiziente Geräte sind Verbündete, keine Täter.",
+  home:"Zuhause gilt dasselbe: Maschine voll beladen, Eco-Programm wählen – das schlägt den Handabwasch bei Wasser und Strom deutlich."}
 ];
 
 /* ---------- Tatort-Skizzen ---------- */
@@ -377,7 +390,9 @@ const CLUES = [
  {lat:47.0520, lng:8.3038, txt:"Ein Grad weniger im Gastraum spart rund 6 % Heizenergie – ohne dass es jemand merkt."}
 ];
 
-let kwSecured = 0, solved = 0, clueCount = 0, errors = 0;
+let kwSecured = 0, chfSecured = 0, solved = 0, clueCount = 0, errors = 0;
+let quizDone = false, quizRight = 0, quizIdx = 0;
+const fmtCHF = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
 let userPos = null, testMode = false, activeIdx = null, step = 0;
 
 /* ================= TON (dezent, kein Loop) ================= */
@@ -1206,8 +1221,10 @@ function solveCase(){
   const s = CASES[activeIdx];
   s.done = true; solved++;
   kwSecured = Math.round((kwSecured + s.kw) * 10) / 10;
+  chfSecured += (s.chf || 0);
   document.getElementById('cases').innerHTML = solved + ' <span>/ 8</span>';
   document.getElementById('kw').innerHTML = kwSecured.toFixed(1) + ' <span>kW</span>';
+  document.getElementById('chf').textContent = '≈ CHF ' + fmtCHF(chfSecured) + '/Jahr';
   /* Abschluss-Zeremonie: Täter werden gestempelt, Kronzeugen unterschreiben */
   if(s.witness){
     showSign();
@@ -1222,10 +1239,11 @@ function solveCase(){
   }
   cfBody.innerHTML = `<div class="case-nr">Fall Nr. ${s.nr} · abgeschlossen</div>
     <div class="case-title">${s.title}</div>
-    <div class="case-place">${s.place}${s.kw ? ' · ' + s.kw.toFixed(1) + ' kW sichergestellt' : ''}</div>
+    <div class="case-place">${s.place}${s.kw ? ' · ' + s.kw.toFixed(1) + ' kW sichergestellt' : ''}${s.chf ? ' · spart ≈ CHF ' + fmtCHF(s.chf) + '/Jahr' : ''}</div>
     ${s.photo ? `<img class="photo-thumb" src="${s.photo}">` : ''}
     <div class="protokoll"><b>Erkenntnis fürs Protokoll</b>${s.fact}</div>
-    <button class="btn btn-quest" onclick="afterCase()">${solved === CASES.length ? 'SCHLUSSBERICHT ÖFFNEN' : 'WEITER ERMITTELN'}</button>`;
+    <details class="home-box"><summary>🏠 UND BEI IHNEN ZU HAUSE?</summary><p>${s.home}</p></details>
+    <button class="btn btn-quest" onclick="afterCase()">${solved === CASES.length ? 'ZUR GEGENÜBERSTELLUNG' : 'WEITER ERMITTELN'}</button>`;
   refresh();
 }
 function afterCase(){
@@ -1262,20 +1280,56 @@ function rank(){
   if(errors <= 6) return 'Inspektor:in';
   return 'Spürnase in Ausbildung';
 }
+const QUIZ = [
+ {q:"Frage 1: Welcher Täter verschlang am meisten Energie?",
+  opts:[{t:"Der Herd im Leerlauf – 5.5 kW",ok:true},{t:"Die zwölf Halogen-Spots",ok:false},{t:"Die Lüftung auf Stufe 5",ok:false}]},
+ {q:"Frage 2: Voll beladene Spülmaschine gegen Handabwasch – wer ist effizienter?",
+  opts:[{t:"Die Maschine",ok:true},{t:"Der Handabwasch",ok:false},{t:"Genau gleich",ok:false}]},
+ {q:"Frage 3: Wann liefert ein Solardach am meisten Strom?",
+  opts:[{t:"Mittags – genau zur Hauptkochzeit",ok:true},{t:"Am späten Abend",ok:false},{t:"Nur in den Sommerferien",ok:false}]}
+];
+function renderQuiz(){
+  const body = document.getElementById('report-body');
+  const Q = QUIZ[quizIdx];
+  body.innerHTML = `<div class="case-nr">Bevor die Akte zugeht</div>
+    <div class="case-title">Die Gegenüberstellung</div>
+    <div class="case-place">Drei letzte Fragen, aus dem Gedächtnis – ${quizIdx + 1} von ${QUIZ.length}</div>
+    <div class="q">${Q.q}</div><div id="qopts"></div><div class="fb" id="qfb"></div>`;
+  const box = body.querySelector('#qopts');
+  Q.opts.forEach(o => {
+    const b = document.createElement('button');
+    b.className = 'opt'; b.textContent = o.t;
+    b.addEventListener('click', () => {
+      box.querySelectorAll('.opt').forEach(x => x.disabled = true);
+      if(o.ok){ b.classList.add('right'); quizRight++; ding(); }
+      else {
+        b.classList.add('wrong'); buzz();
+        box.querySelectorAll('.opt').forEach((x, xi) => { if(Q.opts[xi].ok) x.classList.add('right'); });
+      }
+      setTimeout(() => {
+        quizIdx++;
+        if(quizIdx < QUIZ.length) renderQuiz();
+        else { quizDone = true; showReport(); }
+      }, 1100);
+    });
+    box.appendChild(b);
+  });
+}
 function showReport(){
+  if(!quizDone){ renderQuiz(); document.getElementById('report').classList.add('show'); return; }
   const body = document.getElementById('report-body');
   const photos = CASES.filter(s => s.photo);
   body.innerHTML = `
     <div class="case-nr">Auftrag Nr. 2026-LU · abgeschlossen</div>
     <div class="case-title" style="font-size:26px;">Die verschwundenen Kilowatt – Fall geschlossen</div>
     <div class="case-brief">
-      Alle acht Akten sind vom Tisch: vier Täter überführt, vier Kronzeugen gewonnen, <b>${kwSecured.toFixed(1)} kW sichergestellt</b>.
+      Alle acht Akten sind vom Tisch: vier Täter überführt, vier Kronzeugen gewonnen, <b>${kwSecured.toFixed(1)} kW sichergestellt</b> – zusammen rund <b>CHF ${fmtCHF(chfSecured)} pro Jahr</b>.
       Und die überraschende Wahrheit dieses Falls: Der grösste Täter war nie ein Gerät. Es war die <b>Gewohnheit</b> –
       das Licht, das niemand löscht. Die Tür, die niemand schliesst. Der Herd, den niemand hinterfragt.
       Gute Nachricht, Detektiv:in: Gewohnheiten kann man überführen. Jeden Tag.
     </div>
     <div class="protokoll"><b>Ihre Ermittlerakte</b>
-      Fälle gelöst: 8/8 · Indizien: ${clueCount}/${CLUES.length} · Ermittlungsfehler: ${errors}<br>
+      Fälle gelöst: 8/8 · Indizien: ${clueCount}/${CLUES.length} · Gegenüberstellung: ${quizRight}/3 · Ermittlungsfehler: ${errors}<br>
       Verliehener Rang: <b style="display:inline;font-size:14px;">${rank()}</b>
     </div>
     <div id="collage-slot"></div>
