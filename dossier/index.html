@@ -1,1 +1,684 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Energie-Detektei Luzern · Circular Quest</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --quest:#E8962E; --quest-dark:#9C5D0E; --paper:#F4EDDD; --paper2:#EFE5CE;
+  --ink:#2B2620; --brown:#6B5335; --teal:#0F6E56; --red:#B4432A;
+  --line:#D8CBAF; --muted:#7A6E58;
+  --type:'Special Elite',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans-serif;background:var(--paper);color:var(--ink);}
+#map{position:absolute;inset:0;z-index:1;}
+#map-tint{position:absolute;inset:0;z-index:450;pointer-events:none;background:radial-gradient(130% 130% at 50% 25%, rgba(0,0,0,0) 55%, rgba(80,60,30,.22) 100%);mix-blend-mode:multiply;}
 
+/* ---------- HUD ---------- */
+#topbar{position:absolute;top:0;left:0;right:0;z-index:1000;padding:12px 14px 0;pointer-events:none;}
+.hud{display:flex;gap:8px;pointer-events:auto;}
+.hud-card{flex:1;background:var(--ink);color:var(--paper);border-radius:4px;padding:10px 12px;box-shadow:2px 2px 0 rgba(43,38,32,.3);}
+.hud-card small{font-family:var(--type);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#C9BFA8;display:block;margin-bottom:3px;}
+.hud-card strong{font-size:18px;font-weight:700;line-height:1.1;}
+.hud-card strong span{font-size:12px;font-weight:500;color:#C9BFA8;}
+#brand{position:absolute;top:78px;left:14px;z-index:1000;background:var(--quest);color:var(--ink);font-family:var(--type);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:7px 10px;border-radius:2px;box-shadow:2px 2px 0 rgba(43,38,32,.3);transform:rotate(-1deg);}
+#gps-pill{position:absolute;top:78px;right:14px;z-index:1000;background:#FDFBF4;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px;}
+#gps-dot{width:8px;height:8px;border-radius:50%;background:var(--red);}
+#gps-dot.on{background:var(--teal);animation:blink 2s infinite;}
+@keyframes blink{50%{opacity:.4}}
+#soundbtn{position:absolute;top:120px;right:14px;z-index:1000;background:#FDFBF4;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;}
+#aktenbtn{position:absolute;top:162px;right:14px;z-index:1000;background:var(--ink);color:var(--paper);border:none;border-radius:4px;padding:9px 14px;font-family:var(--type);font-size:11px;cursor:pointer;box-shadow:2px 2px 0 rgba(43,38,32,.3);}
+
+/* ---------- Karten-Pins: Fall-Siegel ---------- */
+.case-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.case-pin{position:relative;width:44px;height:44px;border-radius:50%;background:#FDFBF4;border:3px solid var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(43,38,32,.35);}
+.case-pin .cp-nr{font-family:var(--type);font-size:15px;line-height:1;}
+.case-pin .cp-lbl{font-family:var(--type);font-size:6px;letter-spacing:.04em;color:var(--muted);}
+.case-pin.witness{border-color:var(--teal);border-style:double;border-width:4px;}
+.case-pin.near{background:var(--quest);animation:pulse 1.8s infinite;}
+.case-pin.witness.near{background:#DDEFE7;animation:pulseT 1.8s infinite;}
+.case-pin.done{background:#DDEFE7;border-color:var(--teal);opacity:.9;}
+.case-pin.done::after{content:'✓';position:absolute;right:-5px;top:-5px;width:18px;height:18px;border-radius:50%;background:var(--teal);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #FDFBF4;}
+.case-pin.far{opacity:.85;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(232,150,46,.55)}70%{box-shadow:0 0 0 16px rgba(232,150,46,0)}100%{box-shadow:0 0 0 0 rgba(232,150,46,0)}}
+@keyframes pulseT{0%{box-shadow:0 0 0 0 rgba(15,110,86,.45)}70%{box-shadow:0 0 0 16px rgba(15,110,86,0)}100%{box-shadow:0 0 0 0 rgba(15,110,86,0)}}
+.dist-label{background:var(--ink);color:var(--paper);font-family:var(--type);font-size:9px;padding:3px 8px;border-radius:2px;white-space:nowrap;}
+.clue-pin{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#FDFBF4;border:2px dashed var(--brown);font-size:12px;animation:clueBob 2.2s ease-in-out infinite;cursor:default;}
+.clue-pin.got{border:2px solid var(--teal);background:#DDEFE7;animation:none;opacity:.7;}
+@keyframes clueBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.hero-pin{position:relative;width:52px;height:64px;}
+.hero-pin .hero-ring{position:absolute;left:50%;bottom:2px;width:34px;height:12px;margin-left:-17px;border-radius:50%;border:2px solid rgba(107,83,53,.8);animation:heroRing 1.9s ease-out infinite;}
+@keyframes heroRing{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.6);opacity:0}}
+.hero-pin svg{position:absolute;left:0;top:0;animation:heroBob 1.4s ease-in-out infinite;filter:drop-shadow(0 3px 3px rgba(43,38,32,.35));}
+@keyframes heroBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.maplibregl-marker.hero-marker{z-index:900;}
+
+/* ---------- Toast ---------- */
+#toast{position:absolute;top:170px;left:50%;transform:translate(-50%,-16px);z-index:1500;background:var(--ink);color:var(--paper);border-radius:4px;padding:12px 16px;max-width:82%;box-shadow:3px 3px 0 rgba(43,38,32,.3);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;}
+#toast.show{opacity:1;transform:translate(-50%,0);}
+#toast .t-head{font-family:var(--type);font-size:9px;color:var(--quest);margin-bottom:6px;letter-spacing:.06em;}
+#toast .t-body{font-size:14px;line-height:1.45;}
+
+/* ---------- Test-Modus ---------- */
+#testbar{position:absolute;bottom:14px;left:14px;right:14px;z-index:1000;display:flex;flex-direction:column;gap:8px;align-items:center;}
+#test-toggle{font-family:inherit;font-size:13px;font-weight:500;background:#FDFBF4;border:1px solid var(--line);border-radius:999px;padding:9px 16px;cursor:pointer;}
+#test-stops{display:none;gap:6px;flex-wrap:wrap;justify-content:center;}
+#test-stops.show{display:flex;}
+.tp{font-family:var(--type);font-size:10px;background:var(--ink);color:var(--paper);border:none;border-radius:3px;padding:8px 10px;cursor:pointer;}
+.tp.tw{background:var(--teal);}
+
+/* ---------- Volloverlays (Briefing, Fall, Akten, Bericht) ---------- */
+.paper-screen{position:absolute;inset:0;z-index:2500;background:var(--paper);display:none;flex-direction:column;overflow:hidden;}
+.paper-screen.show{display:flex;}
+.paper-screen::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;background:repeating-linear-gradient(0deg, rgba(107,83,53,.03) 0 2px, transparent 2px 4px);}
+.ps-head{background:var(--ink);color:var(--paper);padding:16px 18px 14px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;}
+.ps-head h2{font-family:var(--type);font-size:13px;color:var(--quest);letter-spacing:.04em;}
+.ps-close{background:var(--quest);color:var(--ink);border:none;border-radius:3px;padding:8px 14px;font-family:var(--type);font-size:11px;cursor:pointer;}
+.ps-body{flex:1;overflow-y:auto;padding:20px 18px calc(28px + env(safe-area-inset-bottom));position:relative;z-index:1;}
+
+.case-nr{font-family:var(--type);font-size:11px;color:var(--quest-dark);letter-spacing:.08em;text-transform:uppercase;}
+.case-title{font-family:var(--type);font-size:24px;margin:6px 0 2px;line-height:1.2;}
+.case-place{font-size:13px;color:var(--muted);margin-bottom:14px;}
+.case-brief{font-size:15px;line-height:1.6;background:#FDFBF4;border:1px solid var(--line);border-left:4px solid var(--quest);padding:13px 15px;margin-bottom:18px;}
+.step-tag{font-family:var(--type);font-size:10px;letter-spacing:.08em;color:var(--brown);margin:16px 0 8px;text-transform:uppercase;}
+.q{font-size:15px;font-weight:700;margin-bottom:10px;line-height:1.45;}
+.opt{display:block;width:100%;text-align:left;font-family:inherit;font-size:15px;font-weight:500;padding:13px 15px;margin-bottom:8px;border:1.5px solid var(--brown);border-radius:3px;background:#FDFBF4;color:var(--ink);cursor:pointer;}
+.opt:active{transform:translate(1px,1px);}
+.opt.right{background:#DDEFE7;border-color:var(--teal);}
+.opt.wrong{background:#F4DCD2;border-color:var(--red);}
+.fb{font-size:14px;min-height:20px;margin:4px 0 8px;font-family:var(--type);}
+.btn{display:block;width:100%;text-align:center;font-family:var(--type);font-size:13px;padding:14px;border-radius:3px;border:none;cursor:pointer;margin-top:12px;}
+.btn-dark{background:var(--ink);color:var(--paper);}
+.btn-quest{background:var(--quest);color:var(--ink);}
+.btn-ghost{background:transparent;color:var(--muted);border:1.5px dashed var(--brown);}
+.photo-thumb{width:100%;max-height:220px;object-fit:cover;border:3px solid #FDFBF4;box-shadow:2px 3px 8px rgba(43,38,32,.3);transform:rotate(-1deg);margin:10px 0;}
+.protokoll{background:#FDFBF4;border:1px solid var(--line);padding:13px 15px;font-size:14px;line-height:1.55;margin-top:14px;}
+.protokoll b{font-family:var(--type);font-size:10px;letter-spacing:.08em;color:var(--quest-dark);display:block;margin-bottom:6px;}
+
+/* Stempel */
+.stamp{position:fixed;left:50%;top:38%;z-index:4000;transform:translate(-50%,-50%) rotate(-14deg) scale(3);font-family:var(--type);font-size:30px;letter-spacing:.1em;color:var(--red);border:5px solid var(--red);border-radius:6px;padding:10px 22px;opacity:0;pointer-events:none;text-transform:uppercase;background:rgba(253,251,244,.6);}
+.stamp.teal{color:var(--teal);border-color:var(--teal);}
+.stamp.slam{animation:slam .55s cubic-bezier(.2,1.4,.4,1) forwards;}
+@keyframes slam{0%{opacity:0;transform:translate(-50%,-50%) rotate(-14deg) scale(3)}60%{opacity:1;transform:translate(-50%,-50%) rotate(-12deg) scale(.95)}100%{opacity:1;transform:translate(-50%,-50%) rotate(-12deg) scale(1)}}
+
+/* Akten-Liste */
+.akte{background:#FDFBF4;border:1.5px solid var(--brown);border-radius:3px;padding:13px 15px;margin-bottom:10px;position:relative;}
+.akte.w{border-color:var(--teal);}
+.akte .a-nr{font-family:var(--type);font-size:10px;color:var(--muted);}
+.akte .a-title{font-family:var(--type);font-size:16px;margin:2px 0;}
+.akte .a-place{font-size:12px;color:var(--muted);}
+.akte .a-fact{font-size:13px;line-height:1.5;margin-top:8px;color:var(--ink);}
+.akte .a-stamp{position:absolute;right:10px;top:10px;font-family:var(--type);font-size:9px;letter-spacing:.06em;color:var(--red);border:2px solid var(--red);border-radius:3px;padding:3px 7px;transform:rotate(6deg);text-transform:uppercase;}
+.akte.w .a-stamp{color:var(--teal);border-color:var(--teal);}
+.akte.open .a-stamp{color:var(--muted);border-color:var(--muted);}
+.akte img{width:72px;height:72px;object-fit:cover;border:2px solid #fff;box-shadow:1px 2px 5px rgba(43,38,32,.3);transform:rotate(2deg);margin-top:8px;}
+.notiz{background:#FDFBF4;border:1px dashed var(--brown);border-radius:3px;padding:10px 13px;font-size:13px;line-height:1.5;margin-bottom:8px;}
+.notiz.locked{color:var(--muted);}
+#collage{width:100%;border:4px solid #FDFBF4;box-shadow:3px 4px 12px rgba(43,38,32,.35);margin:14px 0;}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important;}}
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div id="topbar">
+  <div class="hud">
+    <div class="hud-card"><small>Fälle gelöst</small><strong id="cases">0 <span>/ 8</span></strong></div>
+    <div class="hud-card"><small>kW gesichert</small><strong id="kw">0.0 <span>kW</span></strong></div>
+    <div class="hud-card"><small>Indizien</small><strong id="clues">0 <span>/ 6</span></strong></div>
+  </div>
+</div>
+<div id="brand">Energie-Detektei Luzern</div>
+<div id="gps-pill"><span id="gps-dot"></span><span id="gps-txt">GPS aus</span></div>
+<button id="soundbtn">🔇 Ton aus</button>
+<button id="aktenbtn">📁 FALLAKTEN</button>
+
+<div id="toast"><div class="t-head" id="toast-head">INDIZ ZU DEN AKTEN GELEGT</div><div class="t-body" id="toast-body"></div></div>
+
+<div id="testbar">
+  <div id="test-stops"></div>
+  <button id="test-toggle">Test-Modus: Route simulieren</button>
+</div>
+
+<div class="stamp" id="stamp">Fall gelöst</div>
+
+<!-- ============ BRIEFING ============ -->
+<div class="paper-screen show" id="briefing">
+  <div class="ps-head"><h2>VERTRAULICH · AUFTRAG NR. 2026-LU</h2></div>
+  <div class="ps-body">
+    <div class="case-title" style="font-size:28px;">Die verschwundenen Kilowatt</div>
+    <div class="case-place">Einsatzgebiet: Luzerner Altstadt · Dauer: ca. 45 Min. zu Fuss</div>
+    <div class="case-brief">
+      Nacht für Nacht verschwinden in den Küchen und Gaststuben der Altstadt Kilowattstunden – unbemerkt, aber nicht spurlos.
+      Ihre Aufgabe: Suchen Sie die acht Schauplätze auf, sichern Sie Beweise und legen Sie die Energieverschwendung still.
+      Vier Verdächtige sind zu überführen. Vier Kronzeugen können für die gute Sache gewonnen werden.
+    </div>
+    <div class="step-tag">So ermitteln Sie</div>
+    <p style="font-size:14px;line-height:1.7;">
+      <b>1.</b> Folgen Sie der gepunkteten Route zum nächsten Schauplatz (Ihr GPS zeigt die Distanz).<br>
+      <b>2.</b> Vor Ort: Beantworten Sie die Beobachtungsfrage – nur wer wirklich hinschaut, kommt weiter.<br>
+      <b>3.</b> Sichern Sie ein Beweisfoto (bleibt auf Ihrem Gerät) und lösen Sie den Fall.<br>
+      <b>4.</b> Unterwegs liegen Indizien 🔍 – sie wandern automatisch in Ihr Notizbuch.
+    </p>
+    <button class="btn btn-quest" onclick="closeBriefing()">ERMITTLUNG AUFNEHMEN</button>
+    <p style="font-size:11px;color:var(--muted);margin-top:14px;">Prototyp: Die Beobachtungsfragen sind Platzhalter und werden vor dem Launch vor Ort verifiziert.</p>
+  </div>
+</div>
+
+<!-- ============ FALL ============ -->
+<div class="paper-screen" id="casefile" style="z-index:2600;">
+  <div class="ps-head"><h2 id="cf-head">FALLAKTE</h2><button class="ps-close" onclick="closeCase()">Schliessen</button></div>
+  <div class="ps-body" id="cf-body"></div>
+</div>
+
+<!-- ============ FALLAKTEN-ÜBERSICHT ============ -->
+<div class="paper-screen" id="akten">
+  <div class="ps-head"><h2>FALLAKTEN &amp; NOTIZBUCH</h2><button class="ps-close" onclick="document.getElementById('akten').classList.remove('show')">Schliessen</button></div>
+  <div class="ps-body" id="akten-body"></div>
+</div>
+
+<!-- ============ SCHLUSSBERICHT ============ -->
+<div class="paper-screen" id="report" style="z-index:2700;">
+  <div class="ps-head"><h2>SCHLUSSBERICHT</h2><button class="ps-close" onclick="document.getElementById('report').classList.remove('show')">Schliessen</button></div>
+  <div class="ps-body" id="report-body"></div>
+</div>
+
+<script>
+/* ================= KONFIG ================= */
+const UNLOCK_RADIUS = 50;
+const CLUE_RADIUS   = 35;
+
+/* ================= ROUTE (Altstadt, nur Fusswege) ================= */
+const ROUTE_PATH = [
+ [47.0505, 8.3098], [47.0504, 8.3105], [47.0504, 8.3111],
+ [47.0506, 8.3100], [47.0508, 8.3094], [47.0515, 8.3090], [47.0521, 8.3086],
+ [47.0524, 8.3083], [47.0527, 8.3079], [47.0526, 8.3072], [47.0522, 8.3070],
+ [47.0520, 8.3068], [47.0520, 8.3055], [47.0521, 8.3051], [47.0516, 8.3043],
+ [47.0520, 8.3038], [47.0523, 8.3032]
+];
+
+/* ================= FÄLLE =================
+   witness:false = Verdächtige (überführen) · witness:true = Kronzeugen (gewinnen)
+   PLATZHALTER: obs-Fragen vor dem Launch vor Ort verifizieren! */
+const CASES = [
+ {nr:"01", title:"Das ewige Licht", witness:false, pathIdx:0, place:"Café am Bahnhofplatz", lat:47.0505, lng:8.3098, kw:1.4,
+  brief:"Zeugen berichten von zwölf Halogenlampen, die seit Jahren Tag und Nacht über der Theke glühen. Der Stromzähler dreht Überstunden.",
+  obs:{q:"Beobachtung vor Ort: Wie viele Bögen hat das freistehende historische Bahnhofsportal auf dem Platz?",
+    opts:[{t:"Einen einzigen grossen Torbogen",ok:true},{t:"Drei Bögen nebeneinander",ok:false},{t:"Fünf kleine Bögen",ok:false}]},
+  ded:{q:"Ihre Schlussfolgerung: Wie wird das ewige Licht gestoppt?",
+    opts:[{t:"Auf LED umrüsten – plus Bewegungsmelder für die Nacht",ok:true},{t:"Nur jede zweite Lampe einschalten",ok:false},{t:"Halogen ist effizient genug, Fall schliessen",ok:false}]},
+  fact:"LED braucht rund 80 % weniger Strom als Halogen – kombiniert mit Sensorik sinkt der Verbrauch nochmals deutlich."},
+ {nr:"02", title:"Die glühende Spur", witness:false, pathIdx:2, place:"Grossküche beim KKL", lat:47.0504, lng:8.3111, kw:5.5,
+  brief:"In einer Grossküche glühen zwei Kochplatten auf höchster Stufe – doch der Herd ist verwaist. Die Wärmebildkamera glüht rot.",
+  obs:{q:"Beobachtung vor Ort: Was macht das KKL schon von weitem unverkennbar?",
+    opts:[{t:"Das riesige, weit auskragende Flachdach",ok:true},{t:"Eine goldene Kuppel",ok:false},{t:"Ein hoher Uhrturm",ok:false}]},
+  ded:{q:"Ihre Schlussfolgerung: Wie legen Sie die glühende Spur still?",
+    opts:[{t:"Ausschalten – und langfristig auf Induktion umstellen",ok:true},{t:"Weiterglühen lassen, Aufheizen kostet mehr",ok:false},{t:"Deckel drauf und laufen lassen",ok:false}]},
+  fact:"Herdplatten im Leerlauf gehören zu den grössten Stromfressern in Grossküchen. Induktion heizt in Sekunden – Leerlauf wird unnötig."},
+ {nr:"03", title:"Die geretteten Menüs", witness:true, pathIdx:7, place:"Take-away am Schwanenplatz", lat:47.0524, lng:8.3083, kw:0.8,
+  brief:"Ein Take-away gibt übrig gebliebene Menüs am Abend in Boxen mit, statt sie zu entsorgen. Ein möglicher Kronzeuge für die Detektei.",
+  obs:{q:"Beobachtung vor Ort: Welche Tiere geben dem Schwanenplatz seinen Namen – und ziehen meist gleich nebenan ihre Runden?",
+    opts:[{t:"Schwäne",ok:true},{t:"Seelöwen",ok:false},{t:"Pfauen",ok:false}]},
+  ded:{q:"Zur Anwerbung: Warum ist die Restli-Box ein Gewinn für die Energiebilanz?",
+    opts:[{t:"Gerettetes Essen spart die ganze Energie aus Anbau, Transport und Küche",ok:true},{t:"Sie spart vor allem Platz im Abfallkübel",ok:false},{t:"Gar nicht – Essen wächst ja nach",ok:false}]},
+  fact:"Rund ein Viertel des Schweizer Food Waste entsteht in der Gastronomie. Restli-Boxen und clevere Planung sparen Essen, Geld und Energie."},
+ {nr:"04", title:"Der nächtliche Luftzug", witness:false, pathIdx:9, place:"Hotelküche am Grendel", lat:47.0526, lng:8.3072, kw:2.8,
+  brief:"Lange nach Küchenschluss rauscht eine Abluftanlage auf Stufe 5 in die Nacht. Der Täter bläst warme Luft – und Geld – zum Kamin hinaus.",
+  obs:{q:"Beobachtung vor Ort: Der Grendel ist für den Verkehr ...?",
+    opts:[{t:"Eine reine Fussgängerzone",ok:true},{t:"Eine vierspurige Hauptstrasse",ok:false},{t:"Eine Tramlinie",ok:false}]},
+  ded:{q:"Ihre Schlussfolgerung: Wie stoppen Sie den nächtlichen Luftzug?",
+    opts:[{t:"Bedarfsgesteuert regeln, nachts herunterfahren – plus Wärmerückgewinnung",ok:true},{t:"Fenster öffnen statt Lüftung",ok:false},{t:"Vollgas ist Vorschrift, da geht nichts",ok:false}]},
+  fact:"Bedarfsgeregelte Lüftungen sparen bis zu 50 % Ventilationsstrom – Wärmerückgewinnung nutzt die Abluft gleich doppelt."},
+ {nr:"05", title:"Die offene Tür", witness:false, pathIdx:11, place:"Restaurant am Rathausquai", lat:47.0520, lng:8.3068, kw:3.2,
+  brief:"Ein Getränkekühlschrank steht sperrangelweit offen – 'für den schnellen Zugriff', sagt das Personal. Die Kälte flieht, der Zähler rennt.",
+  obs:{q:"Beobachtung vor Ort: Welches berühmte Bauwerk sehen Sie vom Rathausquai aus flussaufwärts über die Reuss?",
+    opts:[{t:"Die Kapellbrücke mit dem Wasserturm",ok:true},{t:"Die Spreuerbrücke",ok:false},{t:"Eine moderne Glasbrücke",ok:false}]},
+  ded:{q:"Ihre Schlussfolgerung: Wie schliessen Sie diesen Fall – und die Tür?",
+    opts:[{t:"Selbstschliesser montieren und Standort weg von Wärmequellen",ok:true},{t:"Kühlschrank einfach kälter stellen",ok:false},{t:"Offene Türen sind normal, Fall schliessen",ok:false}]},
+  fact:"Ein offener Gastro-Kühlschrank braucht bis zu 30 % mehr Strom – und neben Wärmequellen nochmals deutlich mehr."},
+ {nr:"06", title:"Die Kraft aus dem Wasser", witness:true, pathIdx:13, place:"Reussufer Unter der Egg", lat:47.0521, lng:8.3051, kw:2.2,
+  brief:"Direkt vor der Altstadt fliesst ein riesiger Energiespeicher vorbei. Ein stiller Verbündeter – man muss ihn nur anzapfen.",
+  obs:{q:"Beobachtung vor Ort: Die Promenade Unter der Egg verläuft unter ...?",
+    opts:[{t:"Historischen Arkadenbögen",ok:true},{t:"Einem modernen Glasdach",ok:false},{t:"Einer Stahlbrücke",ok:false}]},
+  ded:{q:"Zur Anwerbung: Wie hilft das Wasser beim Heizen und Kühlen?",
+    opts:[{t:"Via Wärmepumpe – das KKL nutzt bereits Seewasser",ok:true},{t:"Man leitet den Fluss direkt in den Keller",ok:false},{t:"Gar nicht, Wasser ist nur zum Trinken",ok:false}]},
+  fact:"See und Reuss sind riesige Energiespeicher: Das KKL kühlt und heizt mit Wasser aus dem Vierwaldstättersee – emissionsarm und leise."},
+ {nr:"07", title:"Das Dach voller Sonne", witness:true, pathIdx:14, place:"Solardach am Weinmarkt", lat:47.0516, lng:8.3042, kw:1.6,
+  brief:"Über den Gassen liegt ungenutztes Kapital: Dachflächen in bester Südlage. Ein Kronzeuge, der pünktlich zur Mittagszeit liefert.",
+  obs:{q:"Beobachtung vor Ort: Was steht mitten auf dem historischen Weinmarkt?",
+    opts:[{t:"Ein kunstvoller alter Brunnen",ok:true},{t:"Eine Litfasssäule",ok:false},{t:"Ein Karussell",ok:false}]},
+  ded:{q:"Zur Anwerbung: Warum passt Solarstrom perfekt zur Gastronomie?",
+    opts:[{t:"Die Produktionsspitze am Mittag trifft genau die Hauptkochzeit",ok:true},{t:"Nachts ist der Strom am billigsten",ok:false},{t:"Solar funktioniert nur in den Sommerferien",ok:false}]},
+  fact:"Solarstrom vom eigenen Dach passt perfekt zur Gastronomie: Die Produktionsspitze am Mittag trifft genau auf die Hauptkochzeit."},
+ {nr:"08", title:"Die fleissige Maschine", witness:true, pathIdx:16, place:"Beizli am Mühlenplatz", lat:47.0523, lng:8.3032, kw:0,
+  brief:"Eine anonyme Meldung bezichtigt die Spülmaschine der Verschwendung. Doch Vorsicht: Nicht jeder Verdacht hält der Prüfung stand.",
+  obs:{q:"Beobachtung vor Ort: Was sehen Sie vom Mühlenplatz aus in der Reuss?",
+    opts:[{t:"Das historische Nadelwehr",ok:true},{t:"Ein Hausboot",ok:false},{t:"Eine Schiffsschleuse",ok:false}]},
+  ded:{q:"Ihr Urteil: Die Maschine läuft randvoll beladen. Schuldig oder nicht?",
+    opts:[{t:"Nicht schuldig – voll beladen ist sie effizienter als Handabwasch",ok:true},{t:"Schuldig – sofort ausschalten",ok:false},{t:"Schuldig – von Hand spülen wäre besser",ok:false}]},
+  fact:"Eine voll beladene, moderne Spülmaschine ist effizienter als Abwaschen von Hand. Effiziente Geräte sind Verbündete, keine Täter."}
+];
+
+const CLUES = [
+ {lat:47.0504, lng:8.3105, txt:"Gastrobetriebe brauchen pro m² rund fünfmal mehr Energie als ein Bürogebäude."},
+ {lat:47.0522, lng:8.3085, txt:"Kühlen und Gefrieren machen in Restaurants oft 30–40 % des Stromverbrauchs aus."},
+ {lat:47.0527, lng:8.3079, txt:"Jedes Kilo Food Waste verschwendet auch die ganze Energie aus Anbau, Transport und Lagerung."},
+ {lat:47.0521, lng:8.3069, txt:"Viele Öfen heizen täglich 1–2 Stunden leer vor – gezieltes Vorheizen spart bares Geld."},
+ {lat:47.0520, lng:8.3055, txt:"Regionale Saisonküche spart Transportenergie – und schmeckt erst noch frischer."},
+ {lat:47.0520, lng:8.3038, txt:"Ein Grad weniger im Gastraum spart rund 6 % Heizenergie – ohne dass es jemand merkt."}
+];
+
+let kwSecured = 0, solved = 0, clueCount = 0, errors = 0;
+let userPos = null, testMode = false, activeIdx = null, step = 0;
+
+/* ================= TON (dezent, kein Loop) ================= */
+let AC = null, soundOn = false;
+function ensureAC(){ if(!AC){ AC = new (window.AudioContext || window.webkitAudioContext)(); } if(AC.state === 'suspended') AC.resume(); }
+function tone(freq, when, dur, type, vol){
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, when);
+  g.gain.exponentialRampToValueAtTime(0.001, when + dur);
+  o.connect(g).connect(AC.destination); o.start(when); o.stop(when + dur + 0.02);
+}
+function thud(){ if(!soundOn) return; ensureAC(); const t = AC.currentTime;
+  const len = AC.sampleRate * 0.12, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
+  for(let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * (1 - i/len);
+  const s = AC.createBufferSource(); s.buffer = buf; const g = AC.createGain(); g.gain.value = .18;
+  s.connect(g).connect(AC.destination); s.start(t); tone(70, t, .18, 'sine', .2); }
+function ding(){ if(!soundOn) return; ensureAC(); const t = AC.currentTime; tone(880, t, .15, 'triangle', .09); tone(1320, t + .09, .2, 'triangle', .07); }
+function buzz(){ if(!soundOn) return; ensureAC(); const t = AC.currentTime; tone(120, t, .2, 'sawtooth', .06); }
+document.getElementById('soundbtn').addEventListener('click', function(){
+  soundOn = !soundOn;
+  this.textContent = soundOn ? '🔔 Ton an' : '🔇 Ton aus';
+  if(soundOn){ ensureAC(); ding(); }
+});
+
+/* ================= KARTE (Vektor, Dossier-Palette) ================= */
+const map = new maplibregl.Map({
+  container:'map',
+  style:'https://tiles.openfreemap.org/styles/liberty',
+  center:[8.3070, 47.0517], zoom:15.6,
+  attributionControl:{compact:true}
+});
+const tint = document.createElement('div'); tint.id = 'map-tint'; map.getContainer().appendChild(tint);
+map.on('load', () => {
+  const WATER='#9DBFCB', GREEN='#C2CBA0', SAND='#F0E8D2', BUILD='#E2D4B4';
+  map.getStyle().layers.forEach(l => {
+    const id = l.id.toLowerCase();
+    try{
+      if(l.type === 'background') map.setPaintProperty(l.id, 'background-color', SAND);
+      if(l.type === 'fill'){
+        if(id.includes('water')) map.setPaintProperty(l.id, 'fill-color', WATER);
+        else if(/park|grass|wood|forest|green|landcover|landuse|garden|pitch|cemet|scrub|meadow/.test(id)) map.setPaintProperty(l.id, 'fill-color', GREEN);
+        else if(id.includes('building')) map.setPaintProperty(l.id, 'fill-color', BUILD);
+        else if(id.includes('residential') || id.includes('sand') || id.includes('land')) map.setPaintProperty(l.id, 'fill-color', SAND);
+      }
+      if(l.type === 'line' && (id.includes('water') || id.includes('river'))) map.setPaintProperty(l.id, 'line-color', WATER);
+    }catch(e){}
+  });
+  map.addSource('route', {type:'geojson', data:{type:'Feature', properties:{}, geometry:{type:'LineString', coordinates:ROUTE_PATH.map(p => [p[1], p[0]])}}});
+  map.addLayer({id:'route-line', type:'line', source:'route',
+    layout:{'line-cap':'round', 'line-join':'round'},
+    paint:{'line-color':'#6B5335', 'line-width':4, 'line-dasharray':[0.1, 2.2], 'line-opacity':.85}});
+});
+
+/* ---------- Marker ---------- */
+const caseMarkers = CASES.map((s, i) => {
+  const el = document.createElement('div');
+  el.className = 'case-wrap';
+  el.innerHTML = `<div class="case-pin far${s.witness ? ' witness' : ''}" id="pin${i}"><span class="cp-nr">${s.nr}</span><span class="cp-lbl">FALL</span></div><div class="dist-label" id="lab${i}">…</div>`;
+  el.addEventListener('click', () => tryOpen(i));
+  return new maplibregl.Marker({element:el, anchor:'center'}).setLngLat([s.lng, s.lat]).addTo(map);
+});
+CLUES.forEach((c, i) => {
+  const el = document.createElement('div');
+  el.className = 'clue-pin'; el.id = 'cpin' + i; el.textContent = '🔍';
+  new maplibregl.Marker({element:el, anchor:'center'}).setLngLat([c.lng, c.lat]).addTo(map);
+});
+const heroEl = document.createElement('div');
+heroEl.className = 'hero-pin hero-marker';
+heroEl.innerHTML = `<div class="hero-ring"></div>
+<svg viewBox="0 0 64 72" width="52" height="60" aria-label="Ermittler:in">
+  <ellipse cx="32" cy="67" rx="15" ry="4" fill="rgba(43,38,32,.3)"/>
+  <rect x="24" y="50" width="7" height="14" rx="3.5" fill="#3A332B"/>
+  <rect x="33" y="50" width="7" height="14" rx="3.5" fill="#3A332B"/>
+  <path d="M46 36 Q54 40 52 47" stroke="#5A4A38" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M20 32 Q20 24 32 24 Q44 24 44 32 L46 51 Q32 57 18 51 Z" fill="#5A4A38" stroke="#2B2620" stroke-width="2.5"/>
+  <rect x="19" y="43" width="26" height="4.5" rx="2" fill="#E8962E"/>
+  <circle cx="53" cy="52" r="6.5" fill="#D8E4EA" fill-opacity=".85" stroke="#2B2620" stroke-width="2.5"/>
+  <line x1="49" y1="57" x2="45" y2="62" stroke="#2B2620" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="32" cy="15" r="11" fill="#F2C9A0" stroke="#2B2620" stroke-width="2.5"/>
+  <circle cx="28" cy="15" r="1.7" fill="#2B2620"/>
+  <circle cx="36" cy="15" r="1.7" fill="#2B2620"/>
+  <path d="M29 20 Q32 22.5 35 20" stroke="#2B2620" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M18 12 L46 12 L42 4 L22 4 Z" fill="#3A332B" stroke="#2B2620" stroke-width="2.5"/>
+  <rect x="15" y="11" width="34" height="4.5" rx="2.25" fill="#3A332B" stroke="#2B2620" stroke-width="2.5"/>
+</svg>`;
+let heroMarker = null;
+
+function haversine(a, b){
+  const R = 6371000, r = d => d * Math.PI / 180;
+  const dLat = r(b.lat - a.lat), dLng = r(b.lng - a.lng);
+  const h = Math.sin(dLat/2)**2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function refresh(){
+  if(!userPos) return;
+  CASES.forEach((s, i) => {
+    const d = Math.round(haversine(userPos, s));
+    const pin = document.getElementById('pin' + i);
+    const lab = document.getElementById('lab' + i);
+    const w = s.witness ? ' witness' : '';
+    if(s.done){ pin.className = 'case-pin done' + w; lab.textContent = 'GELÖST'; }
+    else if(d <= UNLOCK_RADIUS){ pin.className = 'case-pin near' + w; lab.textContent = 'ERMITTELN!'; }
+    else { pin.className = 'case-pin far' + w; lab.textContent = d >= 1000 ? (d/1000).toFixed(1) + ' km' : d + ' m'; }
+  });
+  CLUES.forEach((c, i) => {
+    if(c.got) return;
+    if(haversine(userPos, c) <= CLUE_RADIUS) collectClue(i);
+  });
+}
+function collectClue(i){
+  const c = CLUES[i];
+  c.got = true; clueCount++;
+  document.getElementById('clues').innerHTML = clueCount + ' <span>/ ' + CLUES.length + '</span>';
+  const pin = document.getElementById('cpin' + i);
+  pin.classList.add('got'); pin.textContent = '✓';
+  ding();
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-head').textContent = 'INDIZ ' + clueCount + '/' + CLUES.length + ' ZU DEN AKTEN GELEGT';
+  document.getElementById('toast-body').textContent = c.txt;
+  toast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast.classList.remove('show'), 6000);
+}
+function setUser(lat, lng, acc){
+  userPos = {lat, lng};
+  if(!heroMarker){
+    heroMarker = new maplibregl.Marker({element:heroEl, anchor:'bottom'}).setLngLat([lng, lat]).addTo(map);
+    map.jumpTo({center:[lng, lat], zoom:16});
+  } else heroMarker.setLngLat([lng, lat]);
+  refresh();
+}
+function setGpsPill(on, txt){
+  document.getElementById('gps-dot').className = on ? 'on' : '';
+  document.getElementById('gps-txt').textContent = txt;
+}
+if('geolocation' in navigator){
+  navigator.geolocation.watchPosition(
+    p => { if(!testMode){ setUser(p.coords.latitude, p.coords.longitude, p.coords.accuracy); setGpsPill(true, 'GPS aktiv'); } },
+    e => setGpsPill(false, e.code === 1 ? 'GPS abgelehnt' : 'GPS-Fehler'),
+    {enableHighAccuracy:true, maximumAge:3000, timeout:15000});
+} else setGpsPill(false, 'Kein GPS');
+
+/* ---------- Test-Modus ---------- */
+let curP = 0, walkTimer = null;
+const stopsEl = document.getElementById('test-stops');
+CASES.forEach((s, i) => {
+  const b = document.createElement('button');
+  b.className = 'tp' + (s.witness ? ' tw' : '');
+  b.textContent = 'FALL ' + s.nr;
+  b.title = s.place;
+  b.addEventListener('click', () => walkRouteTo(i));
+  stopsEl.appendChild(b);
+});
+document.getElementById('test-toggle').addEventListener('click', function(){
+  testMode = !testMode;
+  stopsEl.classList.toggle('show', testMode);
+  this.textContent = testMode ? 'Test-Modus beenden (echtes GPS)' : 'Test-Modus: Route simulieren';
+  if(testMode){ setGpsPill(true, 'Simulation'); curP = 0; setUser(ROUTE_PATH[0][0], ROUTE_PATH[0][1], 10); }
+});
+function walkRouteTo(caseIdx){
+  if(walkTimer){ clearInterval(walkTimer); walkTimer = null; }
+  const target = CASES[caseIdx].pathIdx;
+  const pts = [];
+  if(target >= curP){ for(let i = curP; i <= target; i++) pts.push(ROUTE_PATH[i]); }
+  else { for(let i = curP; i >= target; i--) pts.push(ROUTE_PATH[i]); }
+  curP = target;
+  pts.push([CASES[caseIdx].lat + 0.00008, CASES[caseIdx].lng + 0.00008]);
+  walkAlong(pts);
+}
+function walkAlong(pts){
+  if(!userPos) setUser(pts[0][0], pts[0][1], 10);
+  let seg = 0;
+  function nextSeg(){
+    if(seg >= pts.length - 1) return;
+    const a = pts[seg], b = pts[seg+1];
+    const dist = haversine({lat:a[0],lng:a[1]}, {lat:b[0],lng:b[1]});
+    const steps = Math.max(6, Math.round(dist / 9));
+    let n = 0;
+    walkTimer = setInterval(() => {
+      n++;
+      setUser(a[0] + (b[0]-a[0]) * n/steps, a[1] + (b[1]-a[1]) * n/steps, 10);
+      if(n >= steps){ clearInterval(walkTimer); walkTimer = null; seg++; nextSeg(); }
+    }, 38);
+  }
+  nextSeg();
+}
+
+/* ================= BRIEFING ================= */
+function closeBriefing(){ document.getElementById('briefing').classList.remove('show'); }
+
+/* ================= FALL-ABLAUF ================= */
+const cf = document.getElementById('casefile');
+const cfBody = document.getElementById('cf-body');
+function tryOpen(i){
+  const s = CASES[i];
+  if(s.done){ openAkten(); return; }
+  const d = userPos ? Math.round(haversine(userPos, s)) : Infinity;
+  if(d > UNLOCK_RADIUS){
+    document.getElementById('cf-head').textContent = 'FALLAKTE ' + s.nr + ' · GESPERRT';
+    cfBody.innerHTML = `<div class="case-nr">Fall Nr. ${s.nr} · ${s.witness ? 'Kronzeuge' : 'Verdächtig'}</div>
+      <div class="case-title">${s.title}</div>
+      <div class="case-place">${s.place} · noch ${d >= 1000 ? (d/1000).toFixed(1)+' km' : d+' m'} entfernt</div>
+      <div class="case-brief">${s.brief}</div>
+      <p style="font-size:14px;color:var(--muted);line-height:1.6;">Die Akte öffnet sich erst am Schauplatz (unter ${UNLOCK_RADIUS} m). Folgen Sie der gepunkteten Route – und behalten Sie die Indizien 🔍 im Auge.</p>
+      <button class="btn btn-dark" onclick="closeCase()">Verstanden</button>`;
+    cf.classList.add('show');
+    return;
+  }
+  activeIdx = i; step = 0;
+  renderStep();
+  cf.classList.add('show');
+}
+function closeCase(){ cf.classList.remove('show'); }
+
+function renderStep(){
+  const s = CASES[activeIdx];
+  document.getElementById('cf-head').textContent = 'FALLAKTE ' + s.nr + (s.witness ? ' · KRONZEUGE' : ' · VERDÄCHTIG');
+  let html = `<div class="case-nr">Fall Nr. ${s.nr}</div>
+    <div class="case-title">${s.title}</div>
+    <div class="case-place">${s.place}</div>`;
+  if(step === 0){
+    html += `<div class="case-brief">${s.brief}</div>
+      <div class="step-tag">Schritt 1 von 3 · Beweisaufnahme vor Ort</div>
+      <div class="q">${s.obs.q}</div><div id="opts"></div><div class="fb" id="fb"></div>`;
+  } else if(step === 1){
+    html += `<div class="step-tag">Schritt 2 von 3 · Beweisfoto sichern</div>
+      <p style="font-size:14px;line-height:1.6;margin-bottom:6px;">Fotografieren Sie den Schauplatz für Ihre Akte. Das Bild bleibt auf Ihrem Gerät – es wandert nur in Ihren persönlichen Schlussbericht.</p>
+      <div id="photo-slot">${s.photo ? `<img class="photo-thumb" src="${s.photo}">` : ''}</div>
+      <input type="file" accept="image/*" capture="environment" id="cam" hidden>
+      <button class="btn btn-dark" onclick="document.getElementById('cam').click()">📷 ${s.photo ? 'Foto ersetzen' : 'Beweisfoto aufnehmen'}</button>
+      <button class="btn ${s.photo ? 'btn-quest' : 'btn-ghost'}" onclick="nextStep()">${s.photo ? 'Weiter zur Deduktion' : 'Ohne Foto fortfahren'}</button>`;
+  } else if(step === 2){
+    html += `<div class="step-tag">Schritt 3 von 3 · Deduktion</div>
+      <div class="q">${s.ded.q}</div><div id="opts"></div><div class="fb" id="fb"></div>`;
+  }
+  cfBody.innerHTML = html;
+  cfBody.scrollTop = 0;
+  if(step === 0 || step === 2){
+    const Q = step === 0 ? s.obs : s.ded;
+    const optsEl = cfBody.querySelector('#opts');
+    Q.opts.forEach(o => {
+      const b = document.createElement('button');
+      b.className = 'opt'; b.textContent = o.t;
+      b.addEventListener('click', () => answer(o, b));
+      optsEl.appendChild(b);
+    });
+  }
+  if(step === 1){
+    const cam = document.getElementById('cam');
+    cam.addEventListener('change', () => {
+      if(cam.files && cam.files[0]){
+        CASES[activeIdx].photo = URL.createObjectURL(cam.files[0]);
+        ding();
+        renderStep();
+      }
+    });
+  }
+}
+function nextStep(){ step++; renderStep(); }
+function answer(o, btn){
+  const fb = cfBody.querySelector('#fb');
+  if(!o.ok){
+    errors++;
+    btn.classList.add('wrong');
+    btn.disabled = true;
+    buzz();
+    fb.style.color = 'var(--red)';
+    fb.textContent = step === 0 ? 'Dieser Hinweis führt ins Leere. Schauen Sie genauer hin...' : 'Diese Spur verläuft im Sand. Neuer Versuch.';
+    return;
+  }
+  btn.classList.add('right');
+  ding();
+  if(step === 0){ setTimeout(() => { step = 1; renderStep(); }, 700); }
+  else { setTimeout(solveCase, 500); }
+}
+function solveCase(){
+  const s = CASES[activeIdx];
+  s.done = true; solved++;
+  kwSecured = Math.round((kwSecured + s.kw) * 10) / 10;
+  document.getElementById('cases').innerHTML = solved + ' <span>/ 8</span>';
+  document.getElementById('kw').innerHTML = kwSecured.toFixed(1) + ' <span>kW</span>';
+  /* Stempel! */
+  const st = document.getElementById('stamp');
+  st.textContent = s.witness ? 'Kronzeuge gewonnen' : 'Fall gelöst';
+  st.className = 'stamp' + (s.witness ? ' teal' : '');
+  void st.offsetWidth;
+  st.classList.add('slam');
+  thud();
+  setTimeout(() => st.classList.remove('slam'), 1900);
+  cfBody.innerHTML = `<div class="case-nr">Fall Nr. ${s.nr} · abgeschlossen</div>
+    <div class="case-title">${s.title}</div>
+    <div class="case-place">${s.place}${s.kw ? ' · ' + s.kw.toFixed(1) + ' kW sichergestellt' : ''}</div>
+    ${s.photo ? `<img class="photo-thumb" src="${s.photo}">` : ''}
+    <div class="protokoll"><b>Erkenntnis fürs Protokoll</b>${s.fact}</div>
+    <button class="btn btn-quest" onclick="afterCase()">${solved === CASES.length ? 'SCHLUSSBERICHT ÖFFNEN' : 'WEITER ERMITTELN'}</button>`;
+  refresh();
+}
+function afterCase(){
+  closeCase();
+  if(solved === CASES.length) showReport();
+}
+
+/* ================= FALLAKTEN ================= */
+document.getElementById('aktenbtn').addEventListener('click', openAkten);
+function openAkten(){
+  const body = document.getElementById('akten-body');
+  body.innerHTML =
+    CASES.map(s => `
+      <div class="akte${s.witness ? ' w' : ''}${s.done ? '' : ' open'}">
+        <span class="a-stamp">${s.done ? (s.witness ? 'Gewonnen' : 'Gelöst') : 'Offen'}</span>
+        <div class="a-nr">Fall Nr. ${s.nr} · ${s.witness ? 'Kronzeuge' : 'Verdächtig'}</div>
+        <div class="a-title">${s.done ? s.title : '„' + s.title + '"'}</div>
+        <div class="a-place">${s.place}</div>
+        ${s.done ? `<div class="a-fact">${s.fact}</div>` : `<div class="a-fact" style="color:var(--muted);">Akte noch versiegelt – ermitteln Sie vor Ort.</div>`}
+        ${s.photo ? `<img src="${s.photo}">` : ''}
+      </div>`).join('') +
+    `<div class="step-tag" style="margin-top:20px;">Notizbuch · Indizien</div>` +
+    CLUES.map((c, i) => c.got
+      ? `<div class="notiz">🔍 ${c.txt}</div>`
+      : `<div class="notiz locked">❓ Indiz ${i+1} – noch nicht gefunden. Es liegt an der Route.</div>`).join('');
+  document.getElementById('akten').classList.add('show');
+}
+
+/* ================= SCHLUSSBERICHT ================= */
+function rank(){
+  if(errors <= 2) return 'Meisterdetektiv:in';
+  if(errors <= 6) return 'Inspektor:in';
+  return 'Spürnase in Ausbildung';
+}
+function showReport(){
+  const body = document.getElementById('report-body');
+  const photos = CASES.filter(s => s.photo);
+  body.innerHTML = `
+    <div class="case-nr">Auftrag Nr. 2026-LU · abgeschlossen</div>
+    <div class="case-title" style="font-size:26px;">Die verschwundenen Kilowatt – Fall geschlossen</div>
+    <div class="case-brief">
+      Alle acht Akten sind vom Tisch: vier Täter überführt, vier Kronzeugen gewonnen, <b>${kwSecured.toFixed(1)} kW sichergestellt</b>.
+      Und die überraschende Wahrheit dieses Falls: Der grösste Täter war nie ein Gerät. Es war die <b>Gewohnheit</b> –
+      das Licht, das niemand löscht. Die Tür, die niemand schliesst. Der Herd, den niemand hinterfragt.
+      Gute Nachricht, Detektiv:in: Gewohnheiten kann man überführen. Jeden Tag.
+    </div>
+    <div class="protokoll"><b>Ihre Ermittlerakte</b>
+      Fälle gelöst: 8/8 · Indizien: ${clueCount}/${CLUES.length} · Ermittlungsfehler: ${errors}<br>
+      Verliehener Rang: <b style="display:inline;font-size:14px;">${rank()}</b>
+    </div>
+    <div id="collage-slot"></div>
+    <a class="btn btn-quest" style="text-decoration:none;" target="_blank" rel="noopener"
+       href="https://wa.me/?text=${encodeURIComponent('Fall geschlossen! Ich habe für die Energie-Detektei Luzern alle 8 Fälle gelöst und ' + kwSecured.toFixed(1) + ' kW sichergestellt. 🔎 Übernimm auch du einen Auftrag:')}%20${encodeURIComponent(location.href)}">
+       PER WHATSAPP MELDEN</a>
+    <button class="btn btn-ghost" onclick="document.getElementById('report').classList.remove('show')">Zurück zur Karte</button>`;
+  if(photos.length){
+    buildCollage(photos.map(s => ({url:s.photo, label:'Fall ' + s.nr})), c => {
+      const slot = document.getElementById('collage-slot');
+      slot.innerHTML = '<div class="step-tag">Ihre Beweisfotos</div>';
+      c.id = 'collage';
+      slot.appendChild(c);
+      const dl = document.createElement('a');
+      dl.className = 'btn btn-dark';
+      dl.textContent = 'BEWEISKARTE SPEICHERN';
+      dl.href = c.toDataURL('image/jpeg', .9);
+      dl.download = 'energie-detektei-luzern.jpg';
+      slot.appendChild(dl);
+    });
+  }
+  document.getElementById('report').classList.add('show');
+}
+function buildCollage(items, done){
+  const W = 1080, H = 1240, canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#F4EDDD'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#2B2620'; ctx.fillRect(0, 0, W, 130);
+  ctx.fillStyle = '#E8962E'; ctx.font = '38px "Special Elite", monospace';
+  ctx.fillText('ENERGIE-DETEKTEI LUZERN', 40, 80);
+  ctx.fillStyle = '#2B2620'; ctx.font = '30px "Special Elite", monospace';
+  ctx.fillText('Fall geschlossen · ' + kwSecured.toFixed(1) + ' kW sichergestellt', 40, 190);
+  const cols = 2, cw = (W - 120) / cols, ch = 330;
+  let loaded = 0;
+  const max = Math.min(items.length, 6);
+  if(max === 0){ done(canvas); return; }
+  items.slice(0, 6).forEach((it, i) => {
+    const img = new Image();
+    img.onload = () => {
+      const x = 40 + (i % cols) * (cw + 40), y = 230 + Math.floor(i / cols) * (ch + 30);
+      const r = Math.max(cw / img.width, (ch - 40) / img.height);
+      const sw = cw / r, sh = (ch - 40) / r;
+      ctx.save();
+      ctx.translate(x + cw/2, y + ch/2);
+      ctx.rotate((i % 2 ? 1 : -1) * 0.02);
+      ctx.fillStyle = '#FDFBF4';
+      ctx.fillRect(-cw/2 - 8, -ch/2 - 8, cw + 16, ch + 16);
+      ctx.drawImage(img, (img.width - sw)/2, (img.height - sh)/2, sw, sh, -cw/2, -ch/2, cw, ch - 40);
+      ctx.fillStyle = '#2B2620'; ctx.font = '22px "Special Elite", monospace';
+      ctx.fillText(it.label, -cw/2, ch/2 - 12);
+      ctx.restore();
+      if(++loaded === max) done(canvas);
+    };
+    img.onerror = () => { if(++loaded === max) done(canvas); };
+    img.src = it.url;
+  });
+}
+refresh();
+</script>
+</body>
+</html>
