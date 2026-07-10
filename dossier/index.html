@@ -19,6 +19,9 @@
 html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans-serif;background:var(--paper);color:var(--ink);}
 #map{position:absolute;inset:0;z-index:1;}
 #map-tint{position:absolute;inset:0;z-index:450;pointer-events:none;background:radial-gradient(130% 130% at 50% 25%, rgba(0,0,0,0) 55%, rgba(80,60,30,.22) 100%);mix-blend-mode:multiply;}
+#map-grain{position:absolute;inset:0;z-index:451;pointer-events:none;opacity:.65;mix-blend-mode:multiply;}
+#fog-blur{position:absolute;inset:0;z-index:449;pointer-events:none;backdrop-filter:blur(2.5px) saturate(.75);-webkit-backdrop-filter:blur(2.5px) saturate(.75);}
+.zone-tag{font-family:var(--type);font-size:10px;letter-spacing:.14em;color:#6B5335;border:1.5px dashed #6B5335;padding:4px 9px;background:rgba(244,237,221,.85);transform:rotate(-2deg);pointer-events:none;}
 
 /* ---------- HUD ---------- */
 #topbar{position:absolute;top:0;left:0;right:0;z-index:1000;padding:12px 14px 0;pointer-events:none;}
@@ -33,7 +36,8 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 #gps-dot.on{background:var(--teal);animation:blink 2s infinite;}
 @keyframes blink{50%{opacity:.4}}
 #soundbtn{position:absolute;top:120px;right:14px;z-index:1000;background:#FDFBF4;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;}
-#aktenbtn{position:absolute;top:162px;right:14px;z-index:1000;background:var(--ink);color:var(--paper);border:none;border-radius:4px;padding:9px 14px;font-family:var(--type);font-size:11px;cursor:pointer;box-shadow:2px 2px 0 rgba(43,38,32,.3);}
+#musicbtn{position:absolute;top:162px;right:14px;z-index:1000;background:#FDFBF4;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;}
+#aktenbtn{position:absolute;top:204px;right:14px;z-index:1000;background:var(--ink);color:var(--paper);border:none;border-radius:4px;padding:9px 14px;font-family:var(--type);font-size:11px;cursor:pointer;box-shadow:2px 2px 0 rgba(43,38,32,.3);}
 
 /* ---------- Karten-Pins: Fall-Siegel ---------- */
 .case-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
@@ -52,11 +56,22 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 .clue-pin{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#FDFBF4;border:2px dashed var(--brown);font-size:12px;animation:clueBob 2.2s ease-in-out infinite;cursor:default;}
 .clue-pin.got{border:2px solid var(--teal);background:#DDEFE7;animation:none;opacity:.7;}
 @keyframes clueBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-.hero-pin{position:relative;width:52px;height:64px;}
-.hero-pin .hero-ring{position:absolute;left:50%;bottom:2px;width:34px;height:12px;margin-left:-17px;border-radius:50%;border:2px solid rgba(107,83,53,.8);animation:heroRing 1.9s ease-out infinite;}
+.hero-pin{position:relative;width:58px;height:74px;}
+.hero-pin .hero-ring{position:absolute;left:50%;bottom:2px;width:36px;height:12px;margin-left:-18px;border-radius:50%;border:2px solid rgba(107,83,53,.8);animation:heroRing 1.9s ease-out infinite;}
 @keyframes heroRing{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.6);opacity:0}}
-.hero-pin svg{position:absolute;left:0;top:0;animation:heroBob 1.4s ease-in-out infinite;filter:drop-shadow(0 3px 3px rgba(43,38,32,.35));}
-@keyframes heroBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.hero-pin svg{position:absolute;left:0;top:0;overflow:visible;filter:drop-shadow(0 3px 3px rgba(43,38,32,.35));transform-origin:50% 50%;transition:transform .25s;}
+#hero-body{transform-box:view-box;transform-origin:38px 40px;animation:idleBreath 3.2s ease-in-out infinite;}
+@keyframes idleBreath{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
+#legA,#legB{transform-box:view-box;transform-origin:36px 52px;}
+.hero-pin.walking #legA{animation:stepA .45s ease-in-out infinite;}
+.hero-pin.walking #legB{animation:stepB .45s ease-in-out infinite;}
+@keyframes stepA{0%,100%{transform:rotate(22deg)}50%{transform:rotate(-22deg)}}
+@keyframes stepB{0%,100%{transform:rotate(-22deg)}50%{transform:rotate(22deg)}}
+.hero-pin.walking #hero-body{animation:walkBob .225s ease-in-out infinite;}
+@keyframes walkBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+#arm{transform-box:view-box;transform-origin:47px 29px;}
+.hero-pin.cheer #arm{animation:cheerArm 1.4s ease;}
+@keyframes cheerArm{0%{transform:rotate(0)}30%{transform:rotate(-80deg)}55%{transform:rotate(-62deg)}75%{transform:rotate(-75deg)}100%{transform:rotate(0)}}
 .maplibregl-marker.hero-marker{z-index:900;}
 
 /* ---------- Toast ---------- */
@@ -101,6 +116,40 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 .protokoll{background:#FDFBF4;border:1px solid var(--line);padding:13px 15px;font-size:14px;line-height:1.55;margin-top:14px;}
 .protokoll b{font-family:var(--type);font-size:10px;letter-spacing:.08em;color:var(--quest-dark);display:block;margin-bottom:6px;}
 
+/* --- Aufgabentypen --- */
+input[type=range]{width:100%;accent-color:#9C5D0E;margin:16px 0 4px;}
+.slide-val{font-family:var(--type);font-size:28px;text-align:center;}
+.zeuge{display:block;width:100%;text-align:left;background:#FDFBF4;border:1.5px solid var(--brown);border-radius:3px;padding:12px 14px;margin-bottom:8px;font-family:inherit;cursor:pointer;}
+.zeuge .zw{font-family:var(--type);font-size:10px;color:var(--muted);display:block;margin-bottom:4px;}
+.zeuge .zt{font-size:14px;line-height:1.5;}
+.zeuge.truth{border-color:var(--teal);background:#EAF4EE;pointer-events:none;opacity:.85;}
+.zeuge.lie{border-color:var(--red);background:#F8E9E2;position:relative;pointer-events:none;}
+.zeuge.lie::after{content:'WIDERLEGT';position:absolute;right:8px;top:8px;font-family:var(--type);font-size:9px;color:var(--red);border:2px solid var(--red);padding:2px 6px;transform:rotate(5deg);}
+.sortrow{display:flex;align-items:center;gap:8px;background:#FDFBF4;border:1.5px solid var(--brown);border-radius:3px;padding:9px 11px;margin-bottom:8px;}
+.sortrow.err{border-color:var(--red);background:#F8E9E2;}
+.sortrow .st{flex:1;font-size:13.5px;line-height:1.4;}
+.sortbtn{font-family:var(--type);font-size:9px;padding:7px 8px;border:1.5px solid var(--brown);background:transparent;border-radius:3px;cursor:pointer;color:var(--muted);}
+.sortbtn.sel{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.ordcard{display:block;width:100%;text-align:left;background:#FDFBF4;border:1.5px solid var(--brown);border-radius:3px;padding:12px 38px 12px 14px;margin-bottom:8px;font-family:inherit;font-size:14px;line-height:1.4;cursor:pointer;position:relative;}
+.ordcard .on{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-family:var(--type);font-size:16px;color:var(--quest-dark);}
+.ordcard.sel{border-color:var(--ink);}
+.lupe-scene{width:100%;border:1.5px solid var(--brown);border-radius:3px;background:#FBF6E8;display:block;margin-top:4px;}
+.lupe-scene .hot{cursor:pointer;}
+.lg-head{display:flex;gap:5px;margin:12px 0 5px;}
+.lg-head span{flex:1;font-family:var(--type);font-size:8px;text-align:center;color:var(--muted);}
+.lg-fix{width:92px;flex:none;}
+.lg-row{display:flex;align-items:center;gap:5px;margin-bottom:7px;}
+.lg-name{width:92px;flex:none;font-size:11.5px;line-height:1.25;color:var(--muted);}
+.lg-name b{font-family:var(--type);font-size:11px;color:var(--ink);display:block;}
+.lg-slot{flex:1;height:30px;border:1.5px solid var(--brown);border-radius:3px;background:#FDFBF4;cursor:pointer;padding:0;}
+.lg-slot.dis{opacity:.25;pointer-events:none;}
+.lg-slot.on{background:var(--quest);border-color:var(--quest-dark);}
+.lg-chart{display:flex;gap:5px;align-items:flex-end;height:80px;border-bottom:1.5px solid var(--brown);position:relative;margin-top:14px;}
+.lg-bar{flex:1;background:var(--teal);border-radius:2px 2px 0 0;transition:height .25s,background .25s;min-height:3px;}
+.lg-bar.over{background:var(--red);}
+.lg-limit{position:absolute;left:97px;right:0;border-top:2px dashed var(--red);}
+.lg-limit span{font-family:var(--type);font-size:8px;color:var(--red);background:var(--paper);padding:0 4px;position:relative;top:-7px;left:4px;}
+
 /* Stempel */
 .stamp{position:fixed;left:50%;top:38%;z-index:4000;transform:translate(-50%,-50%) rotate(-14deg) scale(3);font-family:var(--type);font-size:30px;letter-spacing:.1em;color:var(--red);border:5px solid var(--red);border-radius:6px;padding:10px 22px;opacity:0;pointer-events:none;text-transform:uppercase;background:rgba(253,251,244,.6);}
 .stamp.teal{color:var(--teal);border-color:var(--teal);}
@@ -138,6 +187,7 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 <div id="brand">Energie-Detektei Luzern</div>
 <div id="gps-pill"><span id="gps-dot"></span><span id="gps-txt">GPS aus</span></div>
 <button id="soundbtn">🔇 Ton aus</button>
+<button id="musicbtn">🎷 Musik aus</button>
 <button id="aktenbtn">📁 FALLAKTEN</button>
 
 <div id="toast"><div class="t-head" id="toast-head">INDIZ ZU DEN AKTEN GELEGT</div><div class="t-body" id="toast-body"></div></div>
@@ -212,57 +262,67 @@ const CASES = [
   brief:"Zeugen berichten von zwölf Halogenlampen, die seit Jahren Tag und Nacht über der Theke glühen. Der Stromzähler dreht Überstunden.",
   obs:{q:"Beobachtung vor Ort: Wie viele Bögen hat das freistehende historische Bahnhofsportal auf dem Platz?",
     opts:[{t:"Einen einzigen grossen Torbogen",ok:true},{t:"Drei Bögen nebeneinander",ok:false},{t:"Fünf kleine Bögen",ok:false}]},
-  ded:{q:"Ihre Schlussfolgerung: Wie wird das ewige Licht gestoppt?",
-    opts:[{t:"Auf LED umrüsten – plus Bewegungsmelder für die Nacht",ok:true},{t:"Nur jede zweite Lampe einschalten",ok:false},{t:"Halogen ist effizient genug, Fall schliessen",ok:false}]},
+  task:{type:'lupe'},
   fact:"LED braucht rund 80 % weniger Strom als Halogen – kombiniert mit Sensorik sinkt der Verbrauch nochmals deutlich."},
  {nr:"02", title:"Die glühende Spur", witness:false, pathIdx:2, place:"Grossküche beim KKL", lat:47.0504, lng:8.3111, kw:5.5,
   brief:"In einer Grossküche glühen zwei Kochplatten auf höchster Stufe – doch der Herd ist verwaist. Die Wärmebildkamera glüht rot.",
   obs:{q:"Beobachtung vor Ort: Was macht das KKL schon von weitem unverkennbar?",
     opts:[{t:"Das riesige, weit auskragende Flachdach",ok:true},{t:"Eine goldene Kuppel",ok:false},{t:"Ein hoher Uhrturm",ok:false}]},
-  ded:{q:"Ihre Schlussfolgerung: Wie legen Sie die glühende Spur still?",
-    opts:[{t:"Ausschalten – und langfristig auf Induktion umstellen",ok:true},{t:"Weiterglühen lassen, Aufheizen kostet mehr",ok:false},{t:"Deckel drauf und laufen lassen",ok:false}]},
+  task:{type:'minigame'},
   fact:"Herdplatten im Leerlauf gehören zu den grössten Stromfressern in Grossküchen. Induktion heizt in Sekunden – Leerlauf wird unnötig."},
  {nr:"03", title:"Die geretteten Menüs", witness:true, pathIdx:7, place:"Take-away am Schwanenplatz", lat:47.0524, lng:8.3083, kw:0.8,
   brief:"Ein Take-away gibt übrig gebliebene Menüs am Abend in Boxen mit, statt sie zu entsorgen. Ein möglicher Kronzeuge für die Detektei.",
   obs:{q:"Beobachtung vor Ort: Welche Tiere geben dem Schwanenplatz seinen Namen – und ziehen meist gleich nebenan ihre Runden?",
     opts:[{t:"Schwäne",ok:true},{t:"Seelöwen",ok:false},{t:"Pfauen",ok:false}]},
-  ded:{q:"Zur Anwerbung: Warum ist die Restli-Box ein Gewinn für die Energiebilanz?",
-    opts:[{t:"Gerettetes Essen spart die ganze Energie aus Anbau, Transport und Küche",ok:true},{t:"Sie spart vor allem Platz im Abfallkübel",ok:false},{t:"Gar nicht – Essen wächst ja nach",ok:false}]},
+  task:{type:'sort', q:"Sortieren Sie die Beweisstücke: Was rettet Essen – was verschwendet es?",
+    catA:"Rettet", catB:"Verschwendet", items:[
+     {t:"Restli-Box für Gäste am Abend", cat:'A'},
+     {t:"Tagesaktuelle Mengenplanung nach Wetter & Reservationen", cat:'A'},
+     {t:"Riesenportionen als Standardgrösse", cat:'B'},
+     {t:"Buffet bis zur letzten Minute randvoll nachgefüllt", cat:'B'}]},
   fact:"Rund ein Viertel des Schweizer Food Waste entsteht in der Gastronomie. Restli-Boxen und clevere Planung sparen Essen, Geld und Energie."},
  {nr:"04", title:"Der nächtliche Luftzug", witness:false, pathIdx:9, place:"Hotelküche am Grendel", lat:47.0526, lng:8.3072, kw:2.8,
   brief:"Lange nach Küchenschluss rauscht eine Abluftanlage auf Stufe 5 in die Nacht. Der Täter bläst warme Luft – und Geld – zum Kamin hinaus.",
   obs:{q:"Beobachtung vor Ort: Der Grendel ist für den Verkehr ...?",
     opts:[{t:"Eine reine Fussgängerzone",ok:true},{t:"Eine vierspurige Hauptstrasse",ok:false},{t:"Eine Tramlinie",ok:false}]},
-  ded:{q:"Ihre Schlussfolgerung: Wie stoppen Sie den nächtlichen Luftzug?",
-    opts:[{t:"Bedarfsgesteuert regeln, nachts herunterfahren – plus Wärmerückgewinnung",ok:true},{t:"Fenster öffnen statt Lüftung",ok:false},{t:"Vollgas ist Vorschrift, da geht nichts",ok:false}]},
+  task:{type:'slider', q:"Ihre Einschätzung: Wie viel Ventilationsstrom spart eine bedarfsgesteuerte Lüftung gegenüber Dauervollgas?",
+    unit:"%", min:0, max:100, start:15, answer:50, tol:15,
+    reveal:"Bis zu 50 % – nachts und in Nebenzeiten läuft die Anlage sonst schlicht umsonst."},
   fact:"Bedarfsgeregelte Lüftungen sparen bis zu 50 % Ventilationsstrom – Wärmerückgewinnung nutzt die Abluft gleich doppelt."},
  {nr:"05", title:"Die offene Tür", witness:false, pathIdx:11, place:"Restaurant am Rathausquai", lat:47.0520, lng:8.3068, kw:3.2,
   brief:"Ein Getränkekühlschrank steht sperrangelweit offen – 'für den schnellen Zugriff', sagt das Personal. Die Kälte flieht, der Zähler rennt.",
   obs:{q:"Beobachtung vor Ort: Welches berühmte Bauwerk sehen Sie vom Rathausquai aus flussaufwärts über die Reuss?",
     opts:[{t:"Die Kapellbrücke mit dem Wasserturm",ok:true},{t:"Die Spreuerbrücke",ok:false},{t:"Eine moderne Glasbrücke",ok:false}]},
-  ded:{q:"Ihre Schlussfolgerung: Wie schliessen Sie diesen Fall – und die Tür?",
-    opts:[{t:"Selbstschliesser montieren und Standort weg von Wärmequellen",ok:true},{t:"Kühlschrank einfach kälter stellen",ok:false},{t:"Offene Türen sind normal, Fall schliessen",ok:false}]},
+  task:{type:'verhoer', q:"Verhör des Küchenpersonals. Eine Aussage ist falsch – welche?",
+    statements:[
+     {who:"Der Koch", t:"«Wenn der Kühlschrank direkt neben dem Ofen steht, braucht er deutlich mehr Strom.»", lie:false},
+     {who:"Die Servicefachfrau", t:"«Die offene Tür macht praktisch nichts aus – die Kälte bleibt ja im Gerät.»", lie:true},
+     {who:"Der Lernende", t:"«Ein Selbstschliesser an der Tür kostet wenig und spart sofort.»", lie:false}]},
   fact:"Ein offener Gastro-Kühlschrank braucht bis zu 30 % mehr Strom – und neben Wärmequellen nochmals deutlich mehr."},
  {nr:"06", title:"Die Kraft aus dem Wasser", witness:true, pathIdx:13, place:"Reussufer Unter der Egg", lat:47.0521, lng:8.3051, kw:2.2,
   brief:"Direkt vor der Altstadt fliesst ein riesiger Energiespeicher vorbei. Ein stiller Verbündeter – man muss ihn nur anzapfen.",
   obs:{q:"Beobachtung vor Ort: Die Promenade Unter der Egg verläuft unter ...?",
     opts:[{t:"Historischen Arkadenbögen",ok:true},{t:"Einem modernen Glasdach",ok:false},{t:"Einer Stahlbrücke",ok:false}]},
-  ded:{q:"Zur Anwerbung: Wie hilft das Wasser beim Heizen und Kühlen?",
-    opts:[{t:"Via Wärmepumpe – das KKL nutzt bereits Seewasser",ok:true},{t:"Man leitet den Fluss direkt in den Keller",ok:false},{t:"Gar nicht, Wasser ist nur zum Trinken",ok:false}]},
+  task:{type:'order', q:"Rekonstruieren Sie den Ablauf: Wie wird aus Seewasser Gebäudeenergie? Tippen Sie die Schritte in der richtigen Reihenfolge an.",
+    steps:["Wasser wird in der Tiefe des Sees gefasst","Eine Wärmepumpe überträgt die Wärme bzw. Kälte ans Gebäude","Das Wasser fliesst kaum verändert in den See zurück"]},
   fact:"See und Reuss sind riesige Energiespeicher: Das KKL kühlt und heizt mit Wasser aus dem Vierwaldstättersee – emissionsarm und leise."},
  {nr:"07", title:"Das Dach voller Sonne", witness:true, pathIdx:14, place:"Solardach am Weinmarkt", lat:47.0516, lng:8.3042, kw:1.6,
   brief:"Über den Gassen liegt ungenutztes Kapital: Dachflächen in bester Südlage. Ein Kronzeuge, der pünktlich zur Mittagszeit liefert.",
   obs:{q:"Beobachtung vor Ort: Was steht mitten auf dem historischen Weinmarkt?",
     opts:[{t:"Ein kunstvoller alter Brunnen",ok:true},{t:"Eine Litfasssäule",ok:false},{t:"Ein Karussell",ok:false}]},
-  ded:{q:"Zur Anwerbung: Warum passt Solarstrom perfekt zur Gastronomie?",
-    opts:[{t:"Die Produktionsspitze am Mittag trifft genau die Hauptkochzeit",ok:true},{t:"Nachts ist der Strom am billigsten",ok:false},{t:"Solar funktioniert nur in den Sommerferien",ok:false}]},
+  task:{type:'slider', q:"Ihre Einschätzung: Wie viel Prozent seines Tagesertrags liefert ein Solardach in den Mittagsstunden (11–15 Uhr)?",
+    unit:"%", min:0, max:100, start:15, answer:55, tol:15,
+    reveal:"Gut die Hälfte – exakt dann, wenn die Küche auf Hochtouren läuft. Solar und Gastronomie sind ein Traumpaar."},
   fact:"Solarstrom vom eigenen Dach passt perfekt zur Gastronomie: Die Produktionsspitze am Mittag trifft genau auf die Hauptkochzeit."},
  {nr:"08", title:"Die fleissige Maschine", witness:true, pathIdx:16, place:"Beizli am Mühlenplatz", lat:47.0523, lng:8.3032, kw:0,
   brief:"Eine anonyme Meldung bezichtigt die Spülmaschine der Verschwendung. Doch Vorsicht: Nicht jeder Verdacht hält der Prüfung stand.",
   obs:{q:"Beobachtung vor Ort: Was sehen Sie vom Mühlenplatz aus in der Reuss?",
     opts:[{t:"Das historische Nadelwehr",ok:true},{t:"Ein Hausboot",ok:false},{t:"Eine Schiffsschleuse",ok:false}]},
-  ded:{q:"Ihr Urteil: Die Maschine läuft randvoll beladen. Schuldig oder nicht?",
-    opts:[{t:"Nicht schuldig – voll beladen ist sie effizienter als Handabwasch",ok:true},{t:"Schuldig – sofort ausschalten",ok:false},{t:"Schuldig – von Hand spülen wäre besser",ok:false}]},
+  task:{type:'verhoer', q:"Die Gegenüberstellung: Eine Aussage über die Spülmaschine ist falsch – welche?",
+    statements:[
+     {who:"Der Wirt", t:"«Von Hand spülen wäre sparsamer als diese Maschine.»", lie:true},
+     {who:"Die Küchenchefin", t:"«Voll beladen ist die Maschine am effizientesten.»", lie:false},
+     {who:"Der Abwart", t:"«Moderne Geräte brauchen weniger Wasser als der Abwasch im Becken.»", lie:false}]},
   fact:"Eine voll beladene, moderne Spülmaschine ist effizienter als Abwaschen von Hand. Effiziente Geräte sind Verbündete, keine Täter."}
 ];
 
@@ -301,16 +361,120 @@ document.getElementById('soundbtn').addEventListener('click', function(){
   if(soundOn){ ensureAC(); ding(); }
 });
 
+/* ---------- Noir-Loop: Walking-Bass, weiche Akkorde, Vibraphon ---------- */
+let musicOn = false, musicTimer = null, mStep = 0;
+const mf = m => 440 * Math.pow(2, (m - 69) / 12);
+function mTone(midi, when, dur, type, vol, glide){
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.value = mf(midi);
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.linearRampToValueAtTime(vol, when + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.001, when + dur);
+  o.connect(g).connect(AC.destination); o.start(when); o.stop(when + dur + 0.05);
+}
+/* 2 Takte Am7 / Dm7, Achtelraster, ca. 72 bpm */
+const NB = [45,0,48,0, 52,0,43,0, 50,0,53,0, 45,0,40,0];             /* Bass  */
+const NM = [0,0,0,76, 0,0,0,0, 0,0,0,74, 0,0,72,0];                  /* Vibra */
+const CH = {0:[57,60,64,67], 8:[50,53,57,60]};                       /* Pads  */
+function startMusic(){
+  if(!musicOn) return;
+  ensureAC(); stopMusicLoop();
+  mStep = 0;
+  const stepDur = 0.21;
+  let nextTime = AC.currentTime + 0.05;
+  musicTimer = setInterval(() => {
+    while(nextTime < AC.currentTime + 0.3){
+      const s = mStep % 16;
+      if(NB[s]) mTone(NB[s], nextTime, stepDur * 1.7, 'triangle', 0.075);
+      if(NM[s]) mTone(NM[s], nextTime, stepDur * 3.2, 'sine', 0.04);
+      if(CH[s]) CH[s].forEach(n => mTone(n, nextTime, stepDur * 7.5, 'sine', 0.016));
+      if(s % 4 === 2){ /* Besen */
+        const len = AC.sampleRate * 0.05, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
+        for(let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * (1 - i/len) * 0.5;
+        const nsrc = AC.createBufferSource(); nsrc.buffer = buf;
+        const ng = AC.createGain(); ng.gain.value = 0.02;
+        nsrc.connect(ng).connect(AC.destination); nsrc.start(nextTime);
+      }
+      nextTime += stepDur; mStep++;
+    }
+  }, 80);
+}
+function stopMusicLoop(){ if(musicTimer){ clearInterval(musicTimer); musicTimer = null; } }
+document.getElementById('musicbtn').addEventListener('click', function(){
+  musicOn = !musicOn;
+  this.textContent = musicOn ? '🎷 Musik an' : '🎷 Musik aus';
+  if(musicOn) startMusic(); else stopMusicLoop();
+});
+
 /* ================= KARTE (Vektor, Dossier-Palette) ================= */
 const map = new maplibregl.Map({
   container:'map',
   style:'https://tiles.openfreemap.org/styles/liberty',
-  center:[8.3070, 47.0517], zoom:15.6,
+  center:[8.3078, 47.0522], zoom:15.1,
+  pitch:48,
   attributionControl:{compact:true}
 });
+/* Diagnose: wenn die Karte nicht laedt (z.B. lokale Datei auf Android), Hinweis zeigen */
+let mapLoaded = false;
+map.on('load', () => { mapLoaded = true; const n = document.getElementById('map-notice'); if(n) n.remove(); });
+setTimeout(() => {
+  if(mapLoaded) return;
+  const n = document.createElement('div');
+  n.id = 'map-notice';
+  n.style.cssText = 'position:absolute;left:14px;right:14px;top:40%;z-index:2000;background:#FDFBF4;border:1.5px solid #6B5335;border-radius:4px;padding:14px 16px;font-size:13.5px;line-height:1.55;box-shadow:3px 3px 0 rgba(43,38,32,.25);';
+  n.innerHTML = '<b style="font-family:var(--type);font-size:11px;display:block;margin-bottom:6px;color:#8E2F1E;">KARTE KONNTE NICHT GELADEN WERDEN</b>Vermutlich wurde die App als lokale Datei geoeffnet oder die Internetverbindung fehlt. Bitte ueber die Online-Adresse oeffnen (https://...) - dann laedt der Stadtplan.';
+  map.getContainer().appendChild(n);
+}, 6000);
+map.on('error', e => { if(e && e.error) console.warn('Kartenfehler:', e.error.message || e.error); });
 const tint = document.createElement('div'); tint.id = 'map-tint'; map.getContainer().appendChild(tint);
+const grain = document.createElement('div'); grain.id = 'map-grain'; map.getContainer().appendChild(grain);
+(function(){ /* Papierkorn: feines Rauschen als Kachel */
+  const c = document.createElement('canvas'); c.width = c.height = 220;
+  const x = c.getContext('2d'), im = x.createImageData(220, 220);
+  for(let i = 0; i < im.data.length; i += 4){
+    im.data[i] = 92; im.data[i+1] = 74; im.data[i+2] = 52;
+    im.data[i+3] = Math.random() < .82 ? Math.random()*22 : 22 + Math.random()*26;
+  }
+  x.putImageData(im, 0, 0);
+  grain.style.backgroundImage = 'url(' + c.toDataURL() + ')';
+})();
+const fogBlur = document.createElement('div'); fogBlur.id = 'fog-blur'; map.getContainer().appendChild(fogBlur);
+const zoneTag = document.createElement('div'); zoneTag.className = 'zone-tag'; zoneTag.textContent = 'EINSATZGEBIET';
+new maplibregl.Marker({element:zoneTag, anchor:'center'}).setLngLat([8.3080, 47.0582]).addTo(map);
+const ZONE = [[8.2960,47.0475],[8.2985,47.0460],[8.3175,47.0460],[8.3200,47.0475],[8.3200,47.0565],[8.3175,47.0580],[8.2985,47.0580],[8.2960,47.0565],[8.2960,47.0475]];
+const blurSupported = (window.CSS && CSS.supports && (CSS.supports('clip-path', 'path(evenodd, "M0 0 H10 V10 H0 Z")') || CSS.supports('clip-path', "path('M0 0 H10 V10 H0 Z')")));
+function pointInZone(lng, lat){ /* Ray-Casting */
+  let inside = false;
+  for(let i = 0, j = ZONE.length - 1; i < ZONE.length; j = i++){
+    const xi = ZONE[i][0], yi = ZONE[i][1], xj = ZONE[j][0], yj = ZONE[j][1];
+    if(((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+function updateBlurClip(){ /* Unschaerfe nur, wenn der Gebietsrand ueberhaupt sichtbar ist */
+  if(!blurSupported){ fogBlur.style.display = 'none'; return; }
+  const b = map.getBounds();
+  const cornersInside =
+    pointInZone(b.getWest(), b.getSouth()) && pointInZone(b.getEast(), b.getSouth()) &&
+    pointInZone(b.getWest(), b.getNorth()) && pointInZone(b.getEast(), b.getNorth());
+  if(cornersInside || map.getZoom() > 16.4){ fogBlur.style.display = 'none'; return; }
+  fogBlur.style.display = '';
+  const el = map.getContainer();
+  const w = el.clientWidth, h = el.clientHeight;
+  let inner = '';
+  ZONE.forEach((c, i) => {
+    const p = map.project({lng:c[0], lat:c[1]});
+    inner += (i ? 'L' : 'M') + p.x.toFixed(1) + ' ' + p.y.toFixed(1) + ' ';
+  });
+  fogBlur.style.clipPath = 'path(evenodd, "M0 0 H' + w + ' V' + h + ' H0 Z ' + inner + 'Z")';
+}
+map.on('move', updateBlurClip);
+map.on('resize', updateBlurClip);
+
 map.on('load', () => {
-  const WATER='#9DBFCB', GREEN='#C2CBA0', SAND='#F0E8D2', BUILD='#E2D4B4';
+  /* Dossier-Palette: Altpapier, Tinte, ein roter Faden */
+  const WATER='#9DBFCB', GREEN='#C2CBA0', SAND='#F0E8D2', BUILD='#E2D4B4',
+        ROAD='#F8F1DC', ROAD_MINOR='#EFE6C9', CASING='#C6B181', INKTXT='#584631';
   map.getStyle().layers.forEach(l => {
     const id = l.id.toLowerCase();
     try{
@@ -318,17 +482,118 @@ map.on('load', () => {
       if(l.type === 'fill'){
         if(id.includes('water')) map.setPaintProperty(l.id, 'fill-color', WATER);
         else if(/park|grass|wood|forest|green|landcover|landuse|garden|pitch|cemet|scrub|meadow/.test(id)) map.setPaintProperty(l.id, 'fill-color', GREEN);
-        else if(id.includes('building')) map.setPaintProperty(l.id, 'fill-color', BUILD);
+        else if(id.includes('building')) map.setLayoutProperty(l.id, 'visibility', 'none'); /* flach aus, 3D unten */
         else if(id.includes('residential') || id.includes('sand') || id.includes('land')) map.setPaintProperty(l.id, 'fill-color', SAND);
       }
-      if(l.type === 'line' && (id.includes('water') || id.includes('river'))) map.setPaintProperty(l.id, 'line-color', WATER);
+      if(l.type === 'line'){
+        if(id.includes('water') || id.includes('river')) map.setPaintProperty(l.id, 'line-color', WATER);
+        else if(id.includes('casing')) map.setPaintProperty(l.id, 'line-color', CASING);
+        else if(/motorway|trunk|primary|secondary|tertiary|highway|road|street/.test(id)) map.setPaintProperty(l.id, 'line-color', ROAD);
+        else if(/minor|service|path|pedestrian|track|footway|bridge|rail/.test(id)) map.setPaintProperty(l.id, 'line-color', ROAD_MINOR);
+      }
+      if(l.type === 'symbol'){
+        if(/poi|transit|airport|aerodrome|station|bus|ferry|housenum|oneway/.test(id)) map.setLayoutProperty(l.id, 'visibility', 'none');
+        else {
+          map.setPaintProperty(l.id, 'text-color', INKTXT);
+          map.setPaintProperty(l.id, 'text-halo-color', 'rgba(244,237,221,.9)');
+          map.setPaintProperty(l.id, 'text-halo-width', 1.2);
+        }
+      }
     }catch(e){}
   });
-  map.addSource('route', {type:'geojson', data:{type:'Feature', properties:{}, geometry:{type:'LineString', coordinates:ROUTE_PATH.map(p => [p[1], p[0]])}}});
+
+  /* 3D-Gebaeude: die Altstadt bekommt Haeuschen */
+  try{
+    const srcName = Object.keys(map.getStyle().sources).find(k => map.getStyle().sources[k].type === 'vector');
+    map.addLayer({id:'buildings-3d', type:'fill-extrusion', source:srcName, 'source-layer':'building', minzoom:13,
+      paint:{
+        'fill-extrusion-color':BUILD,
+        'fill-extrusion-height':['coalesce', ['get','render_height'], ['get','height'], 9],
+        'fill-extrusion-base':['coalesce', ['get','render_min_height'], ['get','min_height'], 0],
+        'fill-extrusion-opacity':.88
+      }});
+  }catch(e){}
+
+  /* Einsatzgebiet: weicher Nebel statt harter Grenze
+     (Loch-Ring in Gegenrichtung zum Aussenring = GeoJSON-konform, sonst
+      deckt der Nebel auf manchen Mobil-GPUs die ganze Karte zu) */
+  const HOLE = ZONE.slice().reverse();
+  map.addSource('fog', {type:'geojson', data:{type:'Feature', properties:{}, geometry:{type:'Polygon', coordinates:[
+    [[-180,-85],[-180,85],[180,85],[180,-85],[-180,-85]], HOLE ]}}});
+  map.addLayer({id:'fog', type:'fill', source:'fog', paint:{'fill-color':'#EDE6D2', 'fill-opacity':.3}});
+  map.addSource('fog-edge', {type:'geojson', data:{type:'Feature', properties:{}, geometry:{type:'LineString', coordinates:ZONE}}});
+  map.addLayer({id:'fog-edge', type:'line', source:'fog-edge',
+    layout:{'line-cap':'round', 'line-join':'round'},
+    paint:{'line-color':'#EDE6D2', 'line-width':44, 'line-blur':34, 'line-opacity':.55}});
+  updateBlurClip();
+
+  /* Route als echte rote Schnur: Durchhang + Kordel-Textur */
+  map.addImage('rope', ropeTexture(), {pixelRatio:2});
+  map.addSource('route', {type:'geojson', data:{type:'Feature', properties:{}, geometry:{type:'LineString', coordinates:threadCoords(ROUTE_PATH)}}});
+  map.addLayer({id:'route-shadow', type:'line', source:'route',
+    layout:{'line-cap':'round', 'line-join':'round'},
+    paint:{'line-color':'rgba(43,38,32,.32)', 'line-width':4, 'line-translate':[1.5, 2.5]}});
   map.addLayer({id:'route-line', type:'line', source:'route',
     layout:{'line-cap':'round', 'line-join':'round'},
-    paint:{'line-color':'#6B5335', 'line-width':4, 'line-dasharray':[0.1, 2.2], 'line-opacity':.85}});
+    paint:{'line-pattern':'rope', 'line-width':5}});
+  addPushpins();
 });
+
+/* ---------- Schnur & Stecknadeln ---------- */
+function ropeTexture(){ /* kleine Kordel-Kachel: Drall-Streifen + Glanzkante */
+  const w = 24, h = 10;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d');
+  x.fillStyle = '#9E2F1B'; x.fillRect(0, 0, w, h);
+  x.strokeStyle = '#6E1F10'; x.lineWidth = 3; x.lineCap = 'round';
+  for(let i = -1; i < 4; i++){ x.beginPath(); x.moveTo(i*8 - 3, h + 2); x.lineTo(i*8 + 7, -2); x.stroke(); }
+  x.strokeStyle = 'rgba(255,205,190,.55)'; x.lineWidth = 1.2;
+  x.beginPath(); x.moveTo(0, 2); x.lineTo(w, 2); x.stroke();
+  x.fillStyle = 'rgba(60,15,8,.45)'; x.fillRect(0, h - 2, w, 2);
+  return x.getImageData(0, 0, w, h);
+}
+function threadCoords(path){ /* wellige Zwischenpunkte: die Schnur haengt leicht durch */
+  const out = [];
+  for(let i = 0; i < path.length - 1; i++){
+    const a = path[i], b = path[i+1];
+    const dx = b[1] - a[1], dy = b[0] - a[0];
+    const len = Math.hypot(dx, dy) || 1;
+    const px = -dy/len, py = dx/len; /* Senkrechte */
+    const segs = Math.max(5, Math.round(haversine({lat:a[0],lng:a[1]}, {lat:b[0],lng:b[1]}) / 10));
+    const amp = (0.6 + 0.5 * Math.sin(i * 2.7)) * 0.000016 * (i % 2 ? 1 : -1);
+    for(let n = 0; n < segs; n++){
+      const t = n / segs;
+      const sag = Math.sin(t * Math.PI) * amp;
+      out.push([a[1] + dx*t + px*sag, a[0] + dy*t + py*sag]);
+    }
+  }
+  const last = path[path.length - 1];
+  out.push([last[1], last[0]]);
+  return out;
+}
+function addPushpins(){ /* schwarze Stecknadeln an jeder Abzweigung */
+  const bearing = (a, b) => Math.atan2(b[1]-a[1], b[0]-a[0]);
+  const pts = [ROUTE_PATH[0]];
+  for(let i = 1; i < ROUTE_PATH.length - 1; i++){
+    let d = Math.abs(bearing(ROUTE_PATH[i-1], ROUTE_PATH[i]) - bearing(ROUTE_PATH[i], ROUTE_PATH[i+1]));
+    if(d > Math.PI) d = 2*Math.PI - d;
+    if(d > 0.3) pts.push(ROUTE_PATH[i]);
+  }
+  pts.push(ROUTE_PATH[ROUTE_PATH.length - 1]);
+  pts.forEach(p => {
+    /* keine Nadel, wo schon ein Fall-Siegel sitzt */
+    if(CASES.some(s => haversine({lat:p[0], lng:p[1]}, s) < 18)) return;
+    const el = document.createElement('div');
+    el.style.pointerEvents = 'none';
+    el.innerHTML = `<svg width="20" height="26" viewBox="0 0 20 26">
+      <ellipse cx="12.5" cy="24" rx="5" ry="1.6" fill="rgba(43,38,32,.35)"/>
+      <line x1="9.5" y1="10.5" x2="12" y2="23" stroke="#4A4238" stroke-width="1.7" stroke-linecap="round"/>
+      <circle cx="9" cy="7" r="6" fill="#23201B"/>
+      <circle cx="6.8" cy="4.8" r="2" fill="#6A635A"/>
+    </svg>`;
+    new maplibregl.Marker({element:el, anchor:'bottom', offset:[-2, 0]}).setLngLat([p[1], p[0]]).addTo(map);
+  });
+}
 
 /* ---------- Marker ---------- */
 const caseMarkers = CASES.map((s, i) => {
@@ -346,21 +611,36 @@ CLUES.forEach((c, i) => {
 const heroEl = document.createElement('div');
 heroEl.className = 'hero-pin hero-marker';
 heroEl.innerHTML = `<div class="hero-ring"></div>
-<svg viewBox="0 0 64 72" width="52" height="60" aria-label="Ermittler:in">
-  <ellipse cx="32" cy="67" rx="15" ry="4" fill="rgba(43,38,32,.3)"/>
-  <rect x="24" y="50" width="7" height="14" rx="3.5" fill="#3A332B"/>
-  <rect x="33" y="50" width="7" height="14" rx="3.5" fill="#3A332B"/>
-  <path d="M46 36 Q54 40 52 47" stroke="#5A4A38" stroke-width="6" fill="none" stroke-linecap="round"/>
-  <path d="M20 32 Q20 24 32 24 Q44 24 44 32 L46 51 Q32 57 18 51 Z" fill="#5A4A38" stroke="#2B2620" stroke-width="2.5"/>
-  <rect x="19" y="43" width="26" height="4.5" rx="2" fill="#E8962E"/>
-  <circle cx="53" cy="52" r="6.5" fill="#D8E4EA" fill-opacity=".85" stroke="#2B2620" stroke-width="2.5"/>
-  <line x1="49" y1="57" x2="45" y2="62" stroke="#2B2620" stroke-width="3.5" stroke-linecap="round"/>
-  <circle cx="32" cy="15" r="11" fill="#F2C9A0" stroke="#2B2620" stroke-width="2.5"/>
-  <circle cx="28" cy="15" r="1.7" fill="#2B2620"/>
-  <circle cx="36" cy="15" r="1.7" fill="#2B2620"/>
-  <path d="M29 20 Q32 22.5 35 20" stroke="#2B2620" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <path d="M18 12 L46 12 L42 4 L22 4 Z" fill="#3A332B" stroke="#2B2620" stroke-width="2.5"/>
-  <rect x="15" y="11" width="34" height="4.5" rx="2.25" fill="#3A332B" stroke="#2B2620" stroke-width="2.5"/>
+<svg viewBox="0 -6 72 90" width="58" height="72" aria-label="Ermittler:in">
+  <ellipse cx="37" cy="81" rx="16" ry="4" fill="rgba(43,38,32,.3)"/>
+  <g id="legB">
+    <rect x="29" y="50" width="7" height="26" rx="3.5" fill="#2E2822"/>
+    <rect x="26" y="72" width="13" height="6" rx="3" fill="#1E1B17"/>
+  </g>
+  <g id="legA">
+    <rect x="38" y="50" width="7" height="26" rx="3.5" fill="#3F382F"/>
+    <rect x="38" y="72" width="14" height="6" rx="3" fill="#23201B"/>
+  </g>
+  <g id="hero-body">
+    <path d="M25 31 Q25 22 36 21 L45 21 Q53 23 53 31 L54 52 Q54 57 48 57 L28 57 Q23 57 24 51 Z" fill="#5A4A38" stroke="#2B2620" stroke-width="2.5"/>
+    <line x1="39" y1="31" x2="38" y2="56" stroke="#463A2B" stroke-width="1.5"/>
+    <rect x="25" y="41" width="28" height="5" rx="1.5" fill="#E8962E"/>
+    <rect x="36" y="41.5" width="5" height="4" rx="1" fill="#6B4A15"/>
+    <path d="M32 21 L39 31 L46 21 Z" fill="#463A2B"/>
+    <g id="arm">
+      <path d="M46 27 Q57 31 61 40" stroke="#5A4A38" stroke-width="7.5" fill="none" stroke-linecap="round"/>
+      <circle cx="62" cy="42" r="4.2" fill="#F2C9A0" stroke="#2B2620" stroke-width="2"/>
+      <line x1="63.5" y1="40" x2="66.5" y2="33.5" stroke="#2B2620" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="68" cy="28" r="7.5" fill="#D8E4EA" fill-opacity=".85" stroke="#2B2620" stroke-width="2.5"/>
+      <path d="M64.5 25.5 Q66 23.5 68.5 23" stroke="#FDFBF4" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </g>
+    <circle cx="38" cy="12" r="10" fill="#F2C9A0" stroke="#2B2620" stroke-width="2.5"/>
+    <circle cx="43" cy="11" r="1.7" fill="#2B2620"/>
+    <path d="M41 17 Q43.5 18.5 46 17" stroke="#2B2620" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <path d="M27 6 Q27 -4 38 -4 Q49 -4 49 6 Z" fill="#3A332B" stroke="#2B2620" stroke-width="2.5"/>
+    <rect x="27" y="2.5" width="22" height="3.5" fill="#E8962E"/>
+    <ellipse cx="38" cy="7" rx="16" ry="3.6" fill="#3A332B" stroke="#2B2620" stroke-width="2.2"/>
+  </g>
 </svg>`;
 let heroMarker = null;
 
@@ -400,12 +680,23 @@ function collectClue(i){
   clearTimeout(toast._t);
   toast._t = setTimeout(() => toast.classList.remove('show'), 6000);
 }
+let lastLng = null, walkStopT = null;
 function setUser(lat, lng, acc){
   userPos = {lat, lng};
   if(!heroMarker){
     heroMarker = new maplibregl.Marker({element:heroEl, anchor:'bottom'}).setLngLat([lng, lat]).addTo(map);
     map.jumpTo({center:[lng, lat], zoom:16});
-  } else heroMarker.setLngLat([lng, lat]);
+  } else {
+    heroMarker.setLngLat([lng, lat]);
+    /* Blickrichtung nach Bewegungsrichtung, Beine schwingen beim Gehen */
+    if(lastLng !== null && Math.abs(lng - lastLng) > 5e-7){
+      heroEl.querySelector('svg').style.transform = (lng < lastLng) ? 'scaleX(-1)' : '';
+    }
+    heroEl.classList.add('walking');
+    clearTimeout(walkStopT);
+    walkStopT = setTimeout(() => heroEl.classList.remove('walking'), 650);
+  }
+  lastLng = lng;
   refresh();
 }
 function setGpsPill(on, txt){
@@ -501,30 +792,24 @@ function renderStep(){
     html += `<div class="case-brief">${s.brief}</div>
       <div class="step-tag">Schritt 1 von 3 · Beweisaufnahme vor Ort</div>
       <div class="q">${s.obs.q}</div><div id="opts"></div><div class="fb" id="fb"></div>`;
-  } else if(step === 1){
-    html += `<div class="step-tag">Schritt 2 von 3 · Beweisfoto sichern</div>
-      <p style="font-size:14px;line-height:1.6;margin-bottom:6px;">Fotografieren Sie den Schauplatz für Ihre Akte. Das Bild bleibt auf Ihrem Gerät – es wandert nur in Ihren persönlichen Schlussbericht.</p>
-      <div id="photo-slot">${s.photo ? `<img class="photo-thumb" src="${s.photo}">` : ''}</div>
-      <input type="file" accept="image/*" capture="environment" id="cam" hidden>
-      <button class="btn btn-dark" onclick="document.getElementById('cam').click()">📷 ${s.photo ? 'Foto ersetzen' : 'Beweisfoto aufnehmen'}</button>
-      <button class="btn ${s.photo ? 'btn-quest' : 'btn-ghost'}" onclick="nextStep()">${s.photo ? 'Weiter zur Deduktion' : 'Ohne Foto fortfahren'}</button>`;
-  } else if(step === 2){
-    html += `<div class="step-tag">Schritt 3 von 3 · Deduktion</div>
-      <div class="q">${s.ded.q}</div><div id="opts"></div><div class="fb" id="fb"></div>`;
-  }
-  cfBody.innerHTML = html;
-  cfBody.scrollTop = 0;
-  if(step === 0 || step === 2){
-    const Q = step === 0 ? s.obs : s.ded;
+    cfBody.innerHTML = html; cfBody.scrollTop = 0;
     const optsEl = cfBody.querySelector('#opts');
-    Q.opts.forEach(o => {
+    s.obs.opts.forEach(o => {
       const b = document.createElement('button');
       b.className = 'opt'; b.textContent = o.t;
       b.addEventListener('click', () => answer(o, b));
       optsEl.appendChild(b);
     });
+    return;
   }
   if(step === 1){
+    html += `<div class="step-tag">Schritt 2 von 3 · Beweisfoto sichern</div>
+      <p style="font-size:14px;line-height:1.6;margin-bottom:6px;">Fotografieren Sie den Schauplatz für Ihre Akte. Das Bild bleibt auf Ihrem Gerät – es wandert nur in Ihren persönlichen Schlussbericht.</p>
+      <div id="photo-slot">${s.photo ? `<img class="photo-thumb" src="${s.photo}">` : ''}</div>
+      <input type="file" accept="image/*" capture="environment" id="cam" hidden>
+      <button class="btn btn-dark" onclick="document.getElementById('cam').click()">📷 ${s.photo ? 'Foto ersetzen' : 'Beweisfoto aufnehmen'}</button>
+      <button class="btn ${s.photo ? 'btn-quest' : 'btn-ghost'}" onclick="nextStep()">${s.photo ? 'Weiter zur Ermittlung' : 'Ohne Foto fortfahren'}</button>`;
+    cfBody.innerHTML = html; cfBody.scrollTop = 0;
     const cam = document.getElementById('cam');
     cam.addEventListener('change', () => {
       if(cam.files && cam.files[0]){
@@ -533,10 +818,15 @@ function renderStep(){
         renderStep();
       }
     });
+    return;
   }
+  /* Schritt 3: pro Fall eine andere Ermittlungsmethode */
+  html += renderTask(s);
+  cfBody.innerHTML = html; cfBody.scrollTop = 0;
+  initTask(s);
 }
 function nextStep(){ step++; renderStep(); }
-function answer(o, btn){
+function answer(o, btn){ /* nur noch Beobachtungsfragen (Schritt 1) */
   const fb = cfBody.querySelector('#fb');
   if(!o.ok){
     errors++;
@@ -544,13 +834,283 @@ function answer(o, btn){
     btn.disabled = true;
     buzz();
     fb.style.color = 'var(--red)';
-    fb.textContent = step === 0 ? 'Dieser Hinweis führt ins Leere. Schauen Sie genauer hin...' : 'Diese Spur verläuft im Sand. Neuer Versuch.';
+    fb.textContent = 'Dieser Hinweis führt ins Leere. Schauen Sie genauer hin...';
     return;
   }
   btn.classList.add('right');
   ding();
-  if(step === 0){ setTimeout(() => { step = 1; renderStep(); }, 700); }
-  else { setTimeout(solveCase, 500); }
+  setTimeout(() => { step = 1; renderStep(); }, 700);
+}
+function taskDone(msgHtml){
+  const box = document.createElement('div');
+  box.innerHTML = (msgHtml || '') + '<button class="btn btn-quest" id="task-next">FALL ABSCHLIESSEN</button>';
+  cfBody.appendChild(box);
+  document.getElementById('task-next').addEventListener('click', solveCase);
+  document.getElementById('task-next').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+const TASK_LABEL = {slider:'Die Schätzung', verhoer:'Das Verhör', sort:'Beweisstück-Zuordnung', order:'Tatort-Rekonstruktion', lupe:'Die Lupe', minigame:'Der Lastspitzen-Jongleur'};
+function renderTask(s){
+  const t = s.task;
+  let html = `<div class="step-tag">Schritt 3 von 3 · ${TASK_LABEL[t.type]}</div>`;
+  if(t.type === 'slider'){
+    html += `<div class="q">${t.q}</div>
+      <div class="slide-val" id="sv">${t.start} ${t.unit}</div>
+      <input type="range" id="srange" min="${t.min}" max="${t.max}" value="${t.start}">
+      <button class="btn btn-dark" id="sgo">SCHÄTZUNG ZU PROTOKOLL GEBEN</button>
+      <div class="fb" id="fb"></div>`;
+  }
+  if(t.type === 'verhoer'){
+    html += `<div class="q">${t.q}</div><div id="zeugen"></div><div class="fb" id="fb"></div>`;
+  }
+  if(t.type === 'sort'){
+    html += `<div class="q">${t.q}</div><div id="sortbox"></div>
+      <button class="btn btn-dark" id="sortgo">BEWEISLAGE PRÜFEN</button><div class="fb" id="fb"></div>`;
+  }
+  if(t.type === 'order'){
+    html += `<div class="q">${t.q}</div><div id="ordbox"></div><div class="fb" id="fb"></div>`;
+  }
+  if(t.type === 'lupe'){
+    html += `<div class="q">Richten Sie die Lupe auf den Täter: Tippen Sie in der Szene auf den Energiefresser.</div>
+      <div id="lupebox"></div><div class="fb" id="fb"></div>`;
+  }
+  if(t.type === 'minigame'){
+    html += `<div class="q">Mittagsservice! Planen Sie die Einschaltzeiten so, dass die Lastspitze nie über 9 kW steigt. Die Lüftung läuft durchgehend mit 2 kW.</div>
+      <div id="lgbox"></div>
+      <button class="btn btn-dark" id="lggo">SCHICHT STARTEN</button><div class="fb" id="fb"></div>`;
+  }
+  return html;
+}
+function initTask(s){
+  const t = s.task, fb = () => cfBody.querySelector('#fb');
+  /* ---------- Schätz-Schieberegler ---------- */
+  if(t.type === 'slider'){
+    const r = document.getElementById('srange'), sv = document.getElementById('sv');
+    let attempts = 0;
+    r.addEventListener('input', () => sv.textContent = r.value + ' ' + t.unit);
+    document.getElementById('sgo').addEventListener('click', function(){
+      const v = +r.value, d = Math.abs(v - t.answer);
+      if(d <= t.tol){
+        ding(); this.disabled = true; r.disabled = true;
+        taskDone(`<div class="protokoll"><b>Treffer – nur ${d} Punkte daneben</b>Ihre Schätzung: ${v} ${t.unit} · Tatsächlich: ca. ${t.answer} ${t.unit}. ${t.reveal}</div>`);
+      } else {
+        attempts++; errors++; buzz();
+        if(attempts < 2){
+          fb().style.color = 'var(--red)';
+          fb().textContent = 'Sie liegen ' + d + ' Punkte daneben – Tendenz: ' + (v < t.answer ? 'höher.' : 'tiefer.');
+        } else {
+          this.disabled = true; r.disabled = true;
+          taskDone(`<div class="protokoll"><b>Auflösung</b>Tatsächlich sind es ca. ${t.answer} ${t.unit}. ${t.reveal}</div>`);
+        }
+      }
+    });
+  }
+  /* ---------- Verhör ---------- */
+  if(t.type === 'verhoer'){
+    const box = document.getElementById('zeugen');
+    t.statements.forEach(st => {
+      const b = document.createElement('button');
+      b.className = 'zeuge';
+      b.innerHTML = `<span class="zw">${st.who}</span><span class="zt">${st.t}</span>`;
+      b.addEventListener('click', () => {
+        if(st.lie){
+          b.classList.add('lie'); thud();
+          box.querySelectorAll('.zeuge').forEach(z => z.style.pointerEvents = 'none');
+          taskDone(`<div class="protokoll"><b>Falschaussage widerlegt</b>Genau diese Aussage hält der Prüfung nicht stand.</div>`);
+        } else {
+          errors++; buzz();
+          b.classList.add('truth');
+          fb().style.color = 'var(--red)';
+          fb().textContent = 'Diese Aussage ist korrekt – der Zeuge sagt die Wahrheit.';
+        }
+      });
+      box.appendChild(b);
+    });
+  }
+  /* ---------- Beweisstück-Zuordnung ---------- */
+  if(t.type === 'sort'){
+    const box = document.getElementById('sortbox');
+    const state = {};
+    t.items.forEach((it, i) => {
+      const row = document.createElement('div');
+      row.className = 'sortrow'; row.id = 'srow' + i;
+      row.innerHTML = `<span class="st">${it.t}</span>
+        <button class="sortbtn" data-c="A">${t.catA}</button>
+        <button class="sortbtn" data-c="B">${t.catB}</button>`;
+      row.querySelectorAll('.sortbtn').forEach(b => b.addEventListener('click', () => {
+        state[i] = b.dataset.c;
+        row.classList.remove('err');
+        row.querySelectorAll('.sortbtn').forEach(x => x.classList.toggle('sel', x === b));
+      }));
+      box.appendChild(row);
+    });
+    document.getElementById('sortgo').addEventListener('click', function(){
+      if(Object.keys(state).length < t.items.length){
+        fb().style.color = 'var(--red)'; fb().textContent = 'Bitte alle Beweisstücke zuordnen.'; return;
+      }
+      let wrong = 0;
+      t.items.forEach((it, i) => {
+        const ok = state[i] === it.cat;
+        document.getElementById('srow' + i).classList.toggle('err', !ok);
+        if(!ok) wrong++;
+      });
+      if(wrong === 0){
+        ding(); this.disabled = true;
+        box.querySelectorAll('.sortbtn').forEach(b => b.style.pointerEvents = 'none');
+        taskDone(`<div class="protokoll"><b>Beweislage eindeutig</b>Alle Stücke korrekt zugeordnet – das Muster ist klar.</div>`);
+      } else {
+        errors++; buzz();
+        fb().style.color = 'var(--red)';
+        fb().textContent = wrong + (wrong === 1 ? ' Beweisstück liegt' : ' Beweisstücke liegen') + ' falsch – rot markiert.';
+      }
+    });
+  }
+  /* ---------- Tatort-Rekonstruktion ---------- */
+  if(t.type === 'order'){
+    const box = document.getElementById('ordbox');
+    const shuffled = t.steps.map((txt, i) => ({txt, i})).sort(() => Math.random() - .5);
+    let picked = [];
+    function draw(){
+      box.innerHTML = '';
+      shuffled.forEach(st => {
+        const b = document.createElement('button');
+        b.className = 'ordcard' + (picked.includes(st.i) ? ' sel' : '');
+        const pos = picked.indexOf(st.i);
+        b.innerHTML = st.txt + (pos >= 0 ? `<span class="on">${pos + 1}.</span>` : '');
+        b.addEventListener('click', () => {
+          if(picked.includes(st.i)) return;
+          picked.push(st.i); draw();
+          if(picked.length === t.steps.length){
+            const ok = picked.every((v, n) => v === n);
+            if(ok){
+              ding();
+              box.querySelectorAll('.ordcard').forEach(c => c.style.pointerEvents = 'none');
+              taskDone(`<div class="protokoll"><b>Ablauf rekonstruiert</b>Genau in dieser Reihenfolge funktioniert es.</div>`);
+            } else {
+              errors++; buzz();
+              fb().style.color = 'var(--red)';
+              fb().textContent = 'Die Reihenfolge stimmt nicht – Rekonstruktion beginnt von vorn.';
+              setTimeout(() => { picked = []; fb().textContent = ''; draw(); }, 1100);
+            }
+          }
+        });
+        box.appendChild(b);
+      });
+    }
+    draw();
+  }
+  /* ---------- Die Lupe: Bild-Suche ---------- */
+  if(t.type === 'lupe'){
+    document.getElementById('lupebox').innerHTML = `
+    <svg class="lupe-scene" viewBox="0 0 360 220">
+      <rect width="360" height="220" fill="#F7EFD8"/>
+      <rect y="150" width="360" height="70" fill="#D9C08E"/>
+      <rect y="146" width="360" height="8" fill="#B99760"/>
+      <line x1="40" y1="18" x2="320" y2="18" stroke="#4A4238" stroke-width="4"/>
+      <g id="lupe-target" class="hot">
+        <g id="cones">
+          <polygon points="80,30 60,96 100,96" fill="#F7C948" opacity=".4"/>
+          <polygon points="180,30 160,96 200,96" fill="#F7C948" opacity=".4"/>
+          <polygon points="280,30 260,96 300,96" fill="#F7C948" opacity=".4"/>
+        </g>
+        <g id="bulbs">
+          <path d="M70 18 L90 18 L86 34 L74 34 Z" fill="#3A332B"/><circle cx="80" cy="36" r="6" fill="#FFCF4D"/>
+          <path d="M170 18 L190 18 L186 34 L174 34 Z" fill="#3A332B"/><circle cx="180" cy="36" r="6" fill="#FFCF4D"/>
+          <path d="M270 18 L290 18 L286 34 L274 34 Z" fill="#3A332B"/><circle cx="280" cy="36" r="6" fill="#FFCF4D"/>
+        </g>
+      </g>
+      <g id="lupe-d1" class="hot">
+        <rect x="42" y="104" width="66" height="46" rx="5" fill="#7A756C"/>
+        <rect x="50" y="112" width="50" height="12" rx="3" fill="#4A4238"/>
+        <rect x="58" y="136" width="14" height="10" rx="2" fill="#FDFBF4"/>
+        <rect x="80" y="136" width="14" height="10" rx="2" fill="#FDFBF4"/>
+      </g>
+      <g id="lupe-d2" class="hot">
+        <rect x="292" y="70" width="52" height="80" rx="5" fill="#C8D6DC" stroke="#4A4238" stroke-width="2.5"/>
+        <line x1="298" y1="86" x2="298" y2="110" stroke="#4A4238" stroke-width="3.5"/>
+      </g>
+      <g id="lupe-d3" class="hot">
+        <rect x="140" y="122" width="30" height="26" rx="4" fill="#A5672F"/>
+        <path d="M155 122 Q140 96 128 92 Q150 92 155 108 Q160 92 182 92 Q170 96 155 122" fill="#5F8A4E"/>
+      </g>
+      <text x="12" y="210" font-family="Special Elite, monospace" font-size="10" fill="#7A6E58">TATORT: THEKE, 23:40 UHR</text>
+    </svg>`;
+    const done = msg => {
+      document.querySelectorAll('.lupe-scene .hot').forEach(h => h.style.pointerEvents = 'none');
+      taskDone(msg);
+    };
+    document.getElementById('lupe-target').addEventListener('click', () => {
+      ding();
+      document.getElementById('cones').style.opacity = '0';
+      document.querySelectorAll('#bulbs circle').forEach(c => c.setAttribute('fill', '#CFE8F5'));
+      done(`<div class="protokoll"><b>Täter identifiziert</b>Die Halogen-Spots über der Theke! Nach der LED-Umrüstung leuchten sie kühl, hell – und mit 80 % weniger Strom.</div>`);
+    });
+    const miss = {
+      'lupe-d1':'Die Espressomaschine hat einen Standby-Timer – unauffällig.',
+      'lupe-d2':'Der Kühlschrank ist zu und dichtet sauber. Kein Täter.',
+      'lupe-d3':'Die Topfpflanze verbraucht höchstens Wasser.'
+    };
+    Object.keys(miss).forEach(id => document.getElementById(id).addEventListener('click', () => {
+      errors++; buzz();
+      fb().style.color = 'var(--red)';
+      fb().textContent = miss[id] + ' Weiter suchen...';
+    }));
+  }
+  /* ---------- Minigame: Lastspitzen-Jongleur ---------- */
+  if(t.type === 'minigame'){
+    const SLOTS = ['11:00','11:30','12:00','12:30','13:00','13:30'];
+    const LIMIT = 9, BASE = 2;
+    const devs = [
+      {n:'Ofen', kw:4, len:3, minS:0, maxS:3, start:null},
+      {n:'Herd', kw:5, len:2, minS:1, maxS:2, start:null},
+      {n:'Spülmaschine', kw:3, len:2, minS:3, maxS:4, start:null}
+    ];
+    const box = document.getElementById('lgbox');
+    function loads(){
+      const L = SLOTS.map(() => BASE);
+      devs.forEach(d => { if(d.start !== null) for(let k = d.start; k < d.start + d.len; k++) if(k < 6) L[k] += d.kw; });
+      return L;
+    }
+    function draw(){
+      let h = '<div class="lg-head"><span class="lg-fix"></span>' + SLOTS.map(s => '<span>' + s + '</span>').join('') + '</div>';
+      devs.forEach((d, di) => {
+        h += `<div class="lg-row"><span class="lg-name"><b>${d.n}</b>${d.kw} kW · ${d.len} Slots</span>`;
+        for(let sIdx = 0; sIdx < 6; sIdx++){
+          const covered = d.start !== null && sIdx >= d.start && sIdx < d.start + d.len;
+          const allowed = sIdx >= d.minS && sIdx <= d.maxS;
+          h += `<button class="lg-slot${covered ? ' on' : ''}${allowed ? '' : ' dis'}" data-d="${di}" data-s="${sIdx}" aria-label="${d.n} um ${SLOTS[sIdx]} starten"></button>`;
+        }
+        h += '</div>';
+      });
+      h += `<div class="lg-row"><span class="lg-name"><b>Lüftung</b>${BASE} kW · läuft immer</span><span style="flex:1;font-size:11px;color:var(--muted);align-self:center;">durchgehend aktiv</span></div>`;
+      const L = loads();
+      h += '<div class="lg-chart"><span class="lg-name" style="align-self:flex-end;">Last</span>' +
+        L.map(v => `<div class="lg-bar${v > LIMIT ? ' over' : ''}" style="height:${Math.min(100, v/12*100)}%"></div>`).join('') +
+        `<div class="lg-limit" style="bottom:${LIMIT/12*100}%"><span>${LIMIT} kW MAX</span></div></div>`;
+      box.innerHTML = h;
+      box.querySelectorAll('.lg-slot:not(.dis)').forEach(b => b.addEventListener('click', () => {
+        const d = devs[+b.dataset.d], sIdx = +b.dataset.s;
+        d.start = (d.start === sIdx) ? null : sIdx;
+        draw();
+      }));
+    }
+    draw();
+    document.getElementById('lggo').addEventListener('click', function(){
+      if(devs.some(d => d.start === null)){
+        fb().style.color = 'var(--red)'; fb().textContent = 'Erst alle Geräte einplanen.'; return;
+      }
+      const L = loads();
+      const overIdx = L.findIndex(v => v > LIMIT);
+      if(overIdx >= 0){
+        errors++; thud();
+        fb().style.color = 'var(--red)';
+        fb().textContent = 'SICHERUNG GEFALLEN um ' + SLOTS[overIdx] + '! Lastspitze: ' + L[overIdx] + ' kW. Neu stapeln...';
+      } else {
+        ding(); this.disabled = true;
+        box.querySelectorAll('.lg-slot').forEach(b => b.style.pointerEvents = 'none');
+        taskDone(`<div class="protokoll"><b>Service gerettet – Spitze bei ${Math.max.apply(null, L)} kW</b>Genau so funktioniert Lastmanagement: Nicht weniger kochen, sondern klüger staffeln. Das spart teure Lastspitzen – und schont das Netz.</div>`);
+      }
+    });
+  }
 }
 function solveCase(){
   const s = CASES[activeIdx];
@@ -576,6 +1136,8 @@ function solveCase(){
 }
 function afterCase(){
   closeCase();
+  heroEl.classList.add('cheer');
+  setTimeout(() => heroEl.classList.remove('cheer'), 1500);
   if(solved === CASES.length) showReport();
 }
 
