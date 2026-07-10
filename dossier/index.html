@@ -123,6 +123,8 @@ html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',system-ui,sans
 .home-box p{font-size:13.5px;line-height:1.55;padding:0 14px 12px;margin:0;}
 #agent-name{width:100%;font-family:var(--type);font-size:15px;padding:12px 14px;border:1.5px solid var(--brown);border-radius:3px;background:#FDFBF4;color:var(--ink);margin-bottom:4px;}
 #agent-name:focus{outline:2px solid var(--quest);}
+#agent-thumb{display:none;width:110px;height:110px;object-fit:cover;border-radius:50%;border:3px solid var(--ink);box-shadow:2px 3px 6px rgba(43,38,32,.3);margin:4px auto 6px;}
+.agent-hint{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.5;}
 /* --- Verdachts-Board --- */
 #board .ps-body{background:#A87E52;background-image:radial-gradient(120% 120% at 50% 30%, rgba(0,0,0,0) 55%, rgba(43,38,32,.35) 100%);}
 .board-wrap{position:relative;height:560px;max-width:520px;margin:0 auto;}
@@ -272,6 +274,11 @@ input[type=range]{width:100%;accent-color:#9C5D0E;margin:16px 0 4px;}
     </p>
     <div class="step-tag">Ihr Ermittler-Alias</div>
     <input id="agent-name" type="text" maxlength="24" placeholder="z.B. Inspektor Reuss" autocomplete="off">
+    <div class="step-tag">Dienstfoto (optional)</div>
+    <input type="file" accept="image/*" capture="user" id="agent-cam" hidden>
+    <img id="agent-thumb" alt="">
+    <button class="btn btn-dark" type="button" onclick="document.getElementById('agent-cam').click()">📷 DIENSTFOTO AUFNEHMEN</button>
+    <p class="agent-hint">Gesicht mittig ins Bild – den Detektivhut setzen wir Ihnen auf. Das Foto bleibt auf Ihrem Gerät.</p>
     <button class="btn btn-quest" onclick="closeBriefing()">ERMITTLUNG AUFNEHMEN</button>
     <p style="font-size:11px;color:var(--muted);margin-top:14px;">Prototyp: Die Beobachtungsfragen sind Platzhalter und werden vor dem Launch vor Ort verifiziert.</p>
   </div>
@@ -839,7 +846,16 @@ function walkAlong(pts){
 }
 
 /* ================= BRIEFING ================= */
-let agentName = 'Detektiv:in N.N.';
+let agentName = 'Detektiv:in N.N.', agentPhoto = null;
+const agentCam = document.getElementById('agent-cam');
+agentCam.addEventListener('change', () => {
+  if(agentCam.files && agentCam.files[0]){
+    agentPhoto = URL.createObjectURL(agentCam.files[0]);
+    const th = document.getElementById('agent-thumb');
+    th.src = agentPhoto; th.style.display = 'block';
+    ding();
+  }
+});
 function closeBriefing(){
   const v = (document.getElementById('agent-name').value || '').trim();
   if(v) agentName = v;
@@ -886,6 +902,22 @@ function renderBoard(){
 }
 
 /* ================= ERMITTLER-AUSWEIS ================= */
+function shareBadge(canvas){
+  canvas.toBlob(async blob => {
+    const file = new File([blob], 'dienstausweis-energie-detektei.jpg', {type:'image/jpeg'});
+    const text = 'Fall geschlossen! ' + agentName + ' · Rang: ' + rank() + ' · ' + kwSecured.toFixed(1) + ' kW & ≈ CHF ' + fmtCHF(chfSecured) + '/Jahr sichergestellt. 🔎 Übernimm auch du einen Auftrag: ' + location.href;
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file], text:text, title:'Energie-Detektei Luzern'}); }catch(e){ /* abgebrochen */ }
+    } else {
+      /* Fallback: Bild herunterladen + WhatsApp mit Text oeffnen */
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/jpeg', .92);
+      a.download = 'dienstausweis-energie-detektei.jpg';
+      a.click();
+      window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+    }
+  }, 'image/jpeg', .92);
+}
 function buildBadge(done){
   const W = 1080, H = 640, c = document.createElement('canvas');
   c.width = W; c.height = H;
@@ -921,17 +953,36 @@ function buildBadge(done){
     x.restore();
     done(c);
   }
-  const first = CASES.find(s => s.photo);
-  if(first){
+  function drawHat(){
+    const cx = px + ps/2, topY = py + ps*0.30, s = ps*0.62;
+    x.save();
+    x.translate(cx, topY); x.rotate(-0.09);
+    x.fillStyle = '#23201B';
+    x.beginPath(); x.ellipse(0, 0, s*0.56, s*0.13, 0, 0, 7); x.fill();
+    x.beginPath();
+    x.moveTo(-s*0.32, 2);
+    x.quadraticCurveTo(-s*0.35, -s*0.44, 0, -s*0.48);
+    x.quadraticCurveTo(s*0.35, -s*0.44, s*0.32, 2);
+    x.closePath(); x.fill();
+    x.fillStyle = '#E8962E';
+    x.fillRect(-s*0.325, -s*0.17, s*0.65, s*0.09);
+    x.restore();
+  }
+  if(agentPhoto){
     const img = new Image();
     img.onload = () => {
       const r = Math.max(ps/img.width, ps/img.height);
       const sw = ps/r, sh = ps/r;
+      try{ x.filter = 'sepia(.45) contrast(1.06) saturate(.85)'; }catch(e){}
       x.drawImage(img, (img.width-sw)/2, (img.height-sh)/2, sw, sh, px, py, ps, ps);
+      try{ x.filter = 'none'; }catch(e){}
+      drawHat();
+      x.fillStyle = '#7A6E58'; x.font = '20px "Special Elite", monospace';
+      x.fillText('DIENSTFOTO', px + 4, py + ps + 38);
       drawRest();
     };
     img.onerror = drawRest;
-    img.src = first.photo;
+    img.src = agentPhoto;
   } else {
     /* Silhouette */
     x.fillStyle = '#D9CBA8'; x.fillRect(px, py, ps, ps);
@@ -1469,15 +1520,32 @@ function showReport(){
     <button class="btn btn-ghost" onclick="document.getElementById('report').classList.remove('show')">Zurück zur Karte</button>`;
   buildBadge(bc => {
     const slot = document.getElementById('badge-slot');
-    slot.innerHTML = '<div class="step-tag">Ihr Dienstausweis</div>';
+    slot.innerHTML = '<div class="step-tag">Ihr Dienstausweis</div><input type="file" accept="image/*" capture="user" id="badge-cam" hidden>';
     bc.style.width = '100%'; bc.style.border = '4px solid #FDFBF4'; bc.style.boxShadow = '3px 4px 12px rgba(43,38,32,.35)';
     slot.appendChild(bc);
+    const sh = document.createElement('button');
+    sh.className = 'btn btn-quest';
+    sh.textContent = '📤 AUSWEIS PER WHATSAPP TEILEN';
+    sh.addEventListener('click', () => shareBadge(bc));
+    slot.appendChild(sh);
     const dl = document.createElement('a');
     dl.className = 'btn btn-dark';
     dl.textContent = 'AUSWEIS SPEICHERN';
     dl.href = bc.toDataURL('image/jpeg', .92);
     dl.download = 'dienstausweis-energie-detektei.jpg';
     slot.appendChild(dl);
+    const re = document.createElement('button');
+    re.className = 'btn btn-ghost';
+    re.textContent = agentPhoto ? '📷 Dienstfoto ersetzen' : '📷 Dienstfoto nachreichen';
+    re.addEventListener('click', () => document.getElementById('badge-cam').click());
+    slot.appendChild(re);
+    document.getElementById('badge-cam').addEventListener('change', function(){
+      if(this.files && this.files[0]){
+        agentPhoto = URL.createObjectURL(this.files[0]);
+        ding();
+        showReport(); /* Ausweis mit neuem Foto neu aufbauen */
+      }
+    });
   });
   if(photos.length){
     buildCollage(photos.map(s => ({url:s.photo, label:'Fall ' + s.nr})), c => {
