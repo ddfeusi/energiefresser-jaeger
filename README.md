@@ -4,10 +4,13 @@ GPS-basierte Prototypen für den interaktiven Stadtrundgang zu Energieeffizienz 
 
 ## Live-Versionen
 
+Die Wurzel (`index.html`) zeigt eine Auswahlseite, von der aus man zu den einzelnen Varianten gelangt.
+
 | Variante | URL | Stil |
 |---|---|---|
-| **Energiefresser-Jäger** | https://ddfeusi.github.io/energiefresser-jaeger/ | Verspielt: Monster fangen & anfreunden, Chiptune-Musik, Monsterdex |
-| **Energie-Detektei** | https://ddfeusi.github.io/energiefresser-jaeger/dossier/ | Seriös: Fälle lösen, Beobachtungsfragen, Beweisfotos, Schlussbericht |
+| **Energiefresser-Jäger** | https://ddfeusi.github.io/energiefresser-jaeger/pokemon/ | Verspielt: Monster fangen & anfreunden, Chiptune-Musik, Monsterdex |
+| **Energie-Detektei** | https://ddfeusi.github.io/energiefresser-jaeger/detektiv/ | Seriös: Fälle lösen, Beobachtungsfragen, Beweisfotos, Schlussbericht |
+| **Actionbound** | – | Bald verfügbar (`actionbound/`) |
 
 ## Gemeinsame Basis
 
